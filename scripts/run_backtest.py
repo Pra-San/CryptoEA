@@ -489,10 +489,10 @@ class VectorizedBacktestEngine:
             if tp is not None and exit_reason == "signal_reversal":
                 if sig == 1 and np.any(highs[entry_idx+1:exit_idx+1] >= tp):
                     exit_reason = "take_profit"
-                    exit_price = tp * (1 + self.config.slippage_rate)
+                    exit_price = tp * (1 - self.config.slippage_rate)
                 elif sig == -1 and np.any(lows[entry_idx+1:exit_idx+1] <= tp):
                     exit_reason = "take_profit"
-                    exit_price = tp * (1 - self.config.slippage_rate)
+                    exit_price = tp * (1 + self.config.slippage_rate)
 
             # Calculate PnL
             gross_pnl = (exit_price - entry_price) * quantity * sig
@@ -583,12 +583,9 @@ class VectorizedBacktestEngine:
         equity = [self.config.initial_balance]
         trade_map = {}
         for t in trades:
-            entry_ts = t["entry_time"]
             exit_ts = t["exit_time"]
             pnl = t["pnl"]
-            if entry_ts in trade_map:
-                del trade_map[entry_ts]
-            trade_map[exit_ts] = pnl
+            trade_map[exit_ts] = trade_map.get(exit_ts, 0.0) + pnl
 
         for i, ts in enumerate(timestamps[1:]):
             if ts in trade_map:
@@ -893,6 +890,10 @@ def parse_args() -> argparse.Namespace:
                         help="Initial balance (default: 100000)")
     parser.add_argument("--risk-per-trade", type=float, default=0.01,
                         help="Risk per trade (default: 0.01 = 1%%)")
+    parser.add_argument("--fee-rate", type=float, default=0.0006,
+                        help="Per-side commission rate (default: 0.0006 = 0.06%%)")
+    parser.add_argument("--slippage-rate", type=float, default=0.0003,
+                        help="Per-side adverse execution/spread rate (default: 0.0003 = 0.03%%)")
     parser.add_argument("--optimize", action="store_true",
                         help="Run parameter optimization")
     parser.add_argument("--walk-forward", action="store_true",
@@ -1083,8 +1084,8 @@ def run_backtest(args) -> Dict:
     # Run backtest
     bt_config = VectorizedBacktestConfig(
         initial_balance=args.balance,
-        fee_rate=0.0006,
-        slippage_rate=0.0003,
+        fee_rate=args.fee_rate,
+        slippage_rate=args.slippage_rate,
         risk_per_trade=args.risk_per_trade,
     )
 

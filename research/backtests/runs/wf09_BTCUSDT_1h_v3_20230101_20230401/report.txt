@@ -4,10 +4,10 @@
 ============================================================
 
 Total Trades: 55 (Win Rate: 78.2%)
-Total Return: 0.7% | CAGR: 2.8%
-Sharpe: 7.69 | Sortino: 11.08 | Calmar: 344.62
-Max DD: -0.0081% | Profit Factor: 20.53
-Avg PnL: 12.73 | Expectancy: 12.73
+Total Return: 0.7% | CAGR: 2.9%
+Sharpe: 7.87 | Sortino: 11.36 | Calmar: 353.46
+Max DD: -0.0081% | Profit Factor: 20.36
+Avg PnL: 12.61 | Expectancy: 12.61
 Trades/Day: 0.61 | Exposure: 9.5%
 Max Consecutive Wins: 16 | Losses: 2
 Monthly Win Rate: 2/3 months profitable
@@ -17,38 +17,38 @@ Monthly Win Rate: 2/3 months profitable
     Winning Trades:     43 (78.2%)
     Losing Trades:      12
     Win Rate:           78.2%
-    Avg Win:            17.11
+    Avg Win:            16.97
     Avg Loss:           -2.99
     Median PnL:         6.83
-    Best Trade:         58.80
+    Best Trade:         58.16
     Worst Trade:        -7.34
-    Profit Factor:      20.53
-    Payoff Ratio:       5.73
-    Expectancy:         12.73
-    Avg Trade Return:   1.2684%
+    Profit Factor:      20.36
+    Payoff Ratio:       5.68
+    Expectancy:         12.61
+    Avg Trade Return:   1.2573%
     Trades/Day:         0.61
     Avg Holding Bars:   3
     Exposure:           9.5%
 
   Performance Ratios:
-    Total Return:       0.68%
-    CAGR:               2.81%
-    Sharpe Ratio:       7.69
-    Sortino Ratio:      11.08
-    Calmar Ratio:       344.62
+    Total Return:       0.69%
+    CAGR:               2.88%
+    Sharpe Ratio:       7.87
+    Sortino Ratio:      11.36
+    Calmar Ratio:       353.46
 
   Drawdown Analysis:
     Max Drawdown:       -0.0081%
     Avg Drawdown:       -0.0011%
     Max DD Duration:    210 bars
-    Recovery Factor:    83.10
+    Recovery Factor:    85.20
     Ulcer Index:        0.000025
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               -0.0003
-    Alpha:              0.7307%
+    Alpha:              0.7443%
 
   Execution Quality:
     Total Fees:         66.22
