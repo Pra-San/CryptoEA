@@ -90,10 +90,10 @@ class DataPreprocessor:
         df = df.sort_index()
 
         # Forward-fill small gaps (up to max_gap_fill_bars)
-        df = df.fillna(method="ffill", limit=self.config.max_gap_fill_bars)
+        df = df.ffill(limit=self.config.max_gap_fill_bars)
 
         # Backward-fill any remaining NaN at the start
-        df = df.fillna(method="bfill")
+        df = df.bfill()
 
         # Drop any remaining rows with NaN in OHLC
         df = df.dropna(subset=["open", "high", "low", "close"])
@@ -153,16 +153,21 @@ class DataPreprocessor:
         if df.index.tz is None:
             df = df.tz_localize("UTC")
 
-        # Resample OHLCV
-        df_resampled = df[["open", "high", "low", "close", "volume"]].resample(
-            timeframe
-        ).ohlc()
+        # Resample OHLC
+        df_ohlc = df[["open", "high", "low", "close"]].resample(timeframe).ohlc()
+        # Resample volume separately (ohlc doesn't handle volume)
+        df_vol = df[["volume"]].resample(timeframe).sum()
 
-        # Flatten multi-level columns
-        df_resampled.columns = [col[1] for col in df_resampled.columns]
+        # Flatten multi-level columns to single level
+        df_ohlc.columns = [col[1] for col in df_ohlc.columns]
+        # Add volume from the separately-resampled volume DataFrame
+        df_ohlc = df_ohlc.join(df_vol, rsuffix="_vol")
+        # Rename volume column
+        if "volume_vol" in df_ohlc.columns:
+            df_ohlc = df_ohlc.rename(columns={"volume_vol": "volume"})
 
         # Drop rows with NaN
-        df_resampled = df_resampled.dropna()
+        df_resampled = df_ohlc.dropna()
 
         logger.info(f"  Resampled to {timeframe}: {len(df_resampled):,} bars "
                     f"(from {len(df):,})")
@@ -181,10 +186,10 @@ class DataPreprocessor:
         if not self.config.add_indicators:
             return df
 
-        close = df["close"]
-        high = df["high"]
-        low = df["low"]
-        volume = df["volume"]
+        close = df["close"].squeeze() if hasattr(df["close"], "squeeze") else df["close"]
+        high = df["high"].squeeze() if hasattr(df["high"], "squeeze") else df["high"]
+        low = df["low"].squeeze() if hasattr(df["low"], "squeeze") else df["low"]
+        volume = df["volume"].squeeze() if hasattr(df["volume"], "squeeze") else df["volume"]
 
         # --- Returns ---
         if self.config.log_returns:

@@ -212,7 +212,11 @@ class BacktestMetrics:
                     if len(common_idx) > 10:
                         asset_ret = equity.loc[common_idx].pct_change().dropna()
                         bench_ret = bench_returns.loc[common_idx].dropna()
-                        if len(asset_ret) > 1 and len(bench_ret) > 1:
+                        # Align lengths by truncating to minimum
+                        min_len = min(len(asset_ret), len(bench_ret))
+                        if min_len > 1:
+                            asset_ret = asset_ret.iloc[:min_len]
+                            bench_ret = bench_ret.iloc[:min_len]
                             cov_matrix = np.cov(asset_ret.values, bench_ret.values)
                             if cov_matrix[1, 1] > 0:
                                 metrics.beta = cov_matrix[0, 1] / cov_matrix[1, 1]

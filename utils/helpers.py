@@ -16,7 +16,7 @@ def load_env(env_path: Optional[str] = None) -> None:
     if env_path:
         load_dotenv(env_path)
     else:
-        project_root = Path(__file__).parent.parent.parent
+        project_root = Path(__file__).parent.parent
         env_file = project_root / ".env"
         if env_file.exists():
             load_dotenv(env_file)
@@ -68,7 +68,17 @@ def get_binance_data_path(symbol: str = "", timeframe: str = "") -> Path:
     """
     binance_data = Path("/Users/speketi/Projects/TEA/data/binance")
     if symbol and timeframe:
-        return binance_data / timeframe / f"{symbol.lower()}_{timeframe}_spot.csv"
+        # Support both 'm1' and '1m' directory naming
+        m1_path = binance_data / "m1" / f"{symbol.lower()}_{timeframe}_spot.csv"
+        one_m_path = binance_data / "1m" / f"{symbol.lower()}_{timeframe}_spot.csv"
+        
+        if m1_path.exists():
+            return m1_path
+        elif one_m_path.exists():
+            return one_m_path
+        else:
+            # Return m1 path as default (matches actual data structure)
+            return m1_path
     return binance_data
 
 

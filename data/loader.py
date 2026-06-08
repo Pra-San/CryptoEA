@@ -154,6 +154,14 @@ class DataLoader:
                     logger.info(f"Loading cached data: {cached_file}")
                 start = time.time()
                 df = pd.read_parquet(cached_file)
+                # Restore timestamp as index (cache was written with index=False)
+                if "timestamp" in df.columns:
+                    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
+                    df = df.set_index("timestamp")
+                # Verify we got a proper DatetimeIndex
+                if not isinstance(df.index, pd.DatetimeIndex):
+                    logger.warning(f"  Cache has invalid index ({type(df.index).__name__}), rebuilding from CSV")
+                    raise FileNotFoundError("Invalid cache index")
                 elapsed = time.time() - start
                 if self.verbose:
                     logger.info(f"  Loaded {len(df):,} bars in {elapsed:.2f}s")
