@@ -447,7 +447,8 @@ class VectorizedBacktestEngine:
             if sig == 0:
                 continue
 
-            entry_price = opens[entry_idx] * (1 + self.config.slippage_rate * sig)
+            raw_entry_price = opens[entry_idx]
+            entry_price = raw_entry_price * (1 + self.config.slippage_rate * sig)
             entry_time = timestamps[entry_idx]
             sl = stops[entry_idx] if not np.isnan(stops[entry_idx]) else None
             tp = tps[entry_idx] if not np.isnan(tps[entry_idx]) else None
@@ -474,7 +475,8 @@ class VectorizedBacktestEngine:
             if exit_idx is None or exit_idx < entry_idx + self.config.min_holding_bars:
                 continue  # No valid exit found
 
-            exit_price = closes[exit_idx]
+            raw_exit_price = closes[exit_idx]
+            exit_price = raw_exit_price * (1 - self.config.slippage_rate * sig)
             exit_time = timestamps[exit_idx]
 
             # Determine exit reason
@@ -482,21 +484,29 @@ class VectorizedBacktestEngine:
             if sl is not None:
                 if sig == 1 and np.any(lows[entry_idx+1:exit_idx+1] <= sl):
                     exit_reason = "stop_loss"
-                    exit_price = sl * (1 - self.config.slippage_rate)
+                    raw_exit_price = sl
+                    exit_price = raw_exit_price * (1 - self.config.slippage_rate)
                 elif sig == -1 and np.any(highs[entry_idx+1:exit_idx+1] >= sl):
                     exit_reason = "stop_loss"
-                    exit_price = sl * (1 + self.config.slippage_rate)
+                    raw_exit_price = sl
+                    exit_price = raw_exit_price * (1 + self.config.slippage_rate)
             if tp is not None and exit_reason == "signal_reversal":
                 if sig == 1 and np.any(highs[entry_idx+1:exit_idx+1] >= tp):
                     exit_reason = "take_profit"
-                    exit_price = tp * (1 - self.config.slippage_rate)
+                    raw_exit_price = tp
+                    exit_price = raw_exit_price * (1 - self.config.slippage_rate)
                 elif sig == -1 and np.any(lows[entry_idx+1:exit_idx+1] <= tp):
                     exit_reason = "take_profit"
-                    exit_price = tp * (1 + self.config.slippage_rate)
+                    raw_exit_price = tp
+                    exit_price = raw_exit_price * (1 + self.config.slippage_rate)
 
             # Calculate PnL
             gross_pnl = (exit_price - entry_price) * quantity * sig
             exit_fee = position_notional * self.config.fee_rate
+            slippage_cost = (
+                abs(entry_price - raw_entry_price) * quantity
+                + abs(exit_price - raw_exit_price) * quantity
+            )
             net_pnl = gross_pnl - entry_fee - exit_fee
             pnl_pct = net_pnl / position_notional if position_notional > 0 else 0
 
@@ -516,6 +526,7 @@ class VectorizedBacktestEngine:
                 "pnl": net_pnl,
                 "pnl_pct": pnl_pct,
                 "fees": entry_fee + exit_fee,
+                "slippage": slippage_cost,
                 "holding_bars": exit_idx - entry_idx,
                 "metadata": {},
             })
@@ -911,7 +922,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-id", type=str, default=None,
                         help="Optional run id for reproducible artifact paths")
     parser.add_argument("--validation-mode", type=str, default="full_period",
-                        choices=["full_period", "walk_forward"],
+                        choices=["full_period", "walk_forward", "cost_stress", "stress_walk_forward"],
                         help="Validation mode label stored in run metadata")
     parser.add_argument("--train-start", type=str, default=None,
                         help=argparse.SUPPRESS)
@@ -1110,7 +1121,7 @@ def run_backtest(args) -> Dict:
                 'pnl': t['pnl'],
                 'pnl_pct': t['pnl_pct'],
                 'fees': t['fees'],
-                'slippage': 0,
+                'slippage': t.get('slippage', 0),
                 'holding_bars': t['holding_bars'],
                 'metadata': t['metadata'],
             })() for t in result["trades"]],
@@ -1245,7 +1256,7 @@ def run_optimization(args, base_result: Dict):
                         'pnl': t['pnl'],
                         'pnl_pct': t['pnl_pct'],
                         'fees': t['fees'],
-                        'slippage': 0,
+                        'slippage': t.get('slippage', 0),
                         'holding_bars': t['holding_bars'],
                         'metadata': t['metadata'],
                     })() for t in result["trades"]],

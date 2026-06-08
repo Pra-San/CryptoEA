@@ -3,56 +3,56 @@
   BACKTEST PERFORMANCE REPORT
 ============================================================
 
-Total Trades: 737 (Win Rate: 75.7%)
-Total Return: 11.0% | CAGR: 2.2%
-Sharpe: 6.16 | Sortino: 4.30 | Calmar: 44.75
-Max DD: -0.0492% | Profit Factor: 9.39
-Avg PnL: 14.97 | Expectancy: 14.97
+Total Trades: 737 (Win Rate: 74.6%)
+Total Return: 10.9% | CAGR: 2.2%
+Sharpe: 6.11 | Sortino: 4.16 | Calmar: 44.16
+Max DD: -0.0492% | Profit Factor: 9.21
+Avg PnL: 14.76 | Expectancy: 14.76
 Trades/Day: 0.42 | Exposure: 6.6%
-Max Consecutive Wins: 14 | Losses: 4
+Max Consecutive Wins: 14 | Losses: 5
 Monthly Win Rate: 52/58 months profitable
 
   Trade Statistics:
     Total Trades:       737
-    Winning Trades:     558 (75.7%)
-    Losing Trades:      179
-    Win Rate:           75.7%
-    Avg Win:            22.12
-    Avg Loss:           -7.34
-    Median PnL:         11.10
+    Winning Trades:     550 (74.6%)
+    Losing Trades:      187
+    Win Rate:           74.6%
+    Avg Win:            22.19
+    Avg Loss:           -7.09
+    Median PnL:         10.77
     Best Trade:         88.71
     Worst Trade:        -20.47
-    Profit Factor:      9.39
-    Payoff Ratio:       3.01
-    Expectancy:         14.97
-    Avg Trade Return:   1.4200%
+    Profit Factor:      9.21
+    Payoff Ratio:       3.13
+    Expectancy:         14.76
+    Avg Trade Return:   1.4015%
     Trades/Day:         0.42
     Avg Holding Bars:   3
     Exposure:           6.6%
 
   Performance Ratios:
-    Total Return:       11.03%
-    CAGR:               2.20%
-    Sharpe Ratio:       6.16
-    Sortino Ratio:      4.30
-    Calmar Ratio:       44.75
+    Total Return:       10.88%
+    CAGR:               2.17%
+    Sharpe Ratio:       6.11
+    Sortino Ratio:      4.16
+    Calmar Ratio:       44.16
 
   Drawdown Analysis:
     Max Drawdown:       -0.0492%
-    Avg Drawdown:       -0.0038%
+    Avg Drawdown:       -0.0039%
     Max DD Duration:    1011 bars
-    Recovery Factor:    224.06
+    Recovery Factor:    220.99
     Ulcer Index:        0.000082
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               -0.0000
-    Alpha:              11.0315%
+    Alpha:              10.8801%
 
   Execution Quality:
-    Total Fees:         931.47
-    Total Slippage:     0.00
+    Total Fees:         930.84
+    Total Slippage:     465.24
     Best Month:         0.52%
     Worst Month:        -0.03%
     Profitable Months:  52/58

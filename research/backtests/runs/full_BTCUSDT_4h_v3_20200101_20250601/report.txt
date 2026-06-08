@@ -3,56 +3,56 @@
   BACKTEST PERFORMANCE REPORT
 ============================================================
 
-Total Trades: 188 (Win Rate: 84.6%)
-Total Return: 4.5% | CAGR: 0.8%
-Sharpe: 7.06 | Sortino: 5.88 | Calmar: 37.59
-Max DD: -0.0216% | Profit Factor: 26.40
-Avg PnL: 23.83 | Expectancy: 23.83
+Total Trades: 188 (Win Rate: 84.0%)
+Total Return: 4.4% | CAGR: 0.8%
+Sharpe: 7.04 | Sortino: 5.83 | Calmar: 37.31
+Max DD: -0.0216% | Profit Factor: 25.91
+Avg PnL: 23.66 | Expectancy: 23.66
 Trades/Day: 0.10 | Exposure: 5.9%
 Max Consecutive Wins: 23 | Losses: 2
 Monthly Win Rate: 47/65 months profitable
 
   Trade Statistics:
     Total Trades:       188
-    Winning Trades:     159 (84.6%)
-    Losing Trades:      29
-    Win Rate:           84.6%
-    Avg Win:            29.29
-    Avg Loss:           -6.08
-    Median PnL:         20.05
-    Best Trade:         89.50
+    Winning Trades:     158 (84.0%)
+    Losing Trades:      30
+    Win Rate:           84.0%
+    Avg Win:            29.28
+    Avg Loss:           -5.95
+    Median PnL:         19.73
+    Best Trade:         89.49
     Worst Trade:        -22.02
-    Profit Factor:      26.40
-    Payoff Ratio:       4.82
-    Expectancy:         23.83
-    Avg Trade Return:   2.3319%
+    Profit Factor:      25.91
+    Payoff Ratio:       4.92
+    Expectancy:         23.66
+    Avg Trade Return:   2.3149%
     Trades/Day:         0.10
     Avg Holding Bars:   3
     Exposure:           5.9%
 
   Performance Ratios:
-    Total Return:       4.48%
+    Total Return:       4.45%
     CAGR:               0.81%
-    Sharpe Ratio:       7.06
-    Sortino Ratio:      5.88
-    Calmar Ratio:       37.59
+    Sharpe Ratio:       7.04
+    Sortino Ratio:      5.83
+    Calmar Ratio:       37.31
 
   Drawdown Analysis:
     Max Drawdown:       -0.0216%
     Avg Drawdown:       -0.0009%
     Max DD Duration:    187 bars
-    Recovery Factor:    207.13
-    Ulcer Index:        0.000034
+    Recovery Factor:    205.59
+    Ulcer Index:        0.000035
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               0.0000
-    Alpha:              4.4786%
+    Alpha:              4.4452%
 
   Execution Quality:
-    Total Fees:         230.68
-    Total Slippage:     0.00
+    Total Fees:         230.65
+    Total Slippage:     115.82
     Best Month:         0.32%
     Worst Month:        0.00%
     Profitable Months:  47/65

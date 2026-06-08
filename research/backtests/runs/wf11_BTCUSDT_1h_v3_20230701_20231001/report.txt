@@ -5,9 +5,9 @@
 
 Total Trades: 60 (Win Rate: 70.0%)
 Total Return: 0.3% | CAGR: 1.4%
-Sharpe: 7.39 | Sortino: 10.12 | Calmar: 205.23
-Max DD: -0.0068% | Profit Factor: 10.70
-Avg PnL: 5.76 | Expectancy: 5.76
+Sharpe: 7.28 | Sortino: 9.69 | Calmar: 200.05
+Max DD: -0.0068% | Profit Factor: 10.15
+Avg PnL: 5.61 | Expectancy: 5.61
 Trades/Day: 0.65 | Exposure: 9.9%
 Max Consecutive Wins: 7 | Losses: 3
 Monthly Win Rate: 2/3 months profitable
@@ -17,42 +17,42 @@ Monthly Win Rate: 2/3 months profitable
     Winning Trades:     42 (70.0%)
     Losing Trades:      18
     Win Rate:           70.0%
-    Avg Win:            9.08
-    Avg Loss:           -1.98
-    Median PnL:         3.12
-    Best Trade:         31.99
+    Avg Win:            8.90
+    Avg Loss:           -2.05
+    Median PnL:         2.82
+    Best Trade:         31.70
     Worst Trade:        -4.48
-    Profit Factor:      10.70
-    Payoff Ratio:       4.59
-    Expectancy:         5.76
-    Avg Trade Return:   0.5750%
+    Profit Factor:      10.15
+    Payoff Ratio:       4.35
+    Expectancy:         5.61
+    Avg Trade Return:   0.5605%
     Trades/Day:         0.65
     Avg Holding Bars:   3
     Exposure:           9.9%
 
   Performance Ratios:
-    Total Return:       0.35%
-    CAGR:               1.39%
-    Sharpe Ratio:       7.39
-    Sortino Ratio:      10.12
-    Calmar Ratio:       205.23
+    Total Return:       0.34%
+    CAGR:               1.36%
+    Sharpe Ratio:       7.28
+    Sortino Ratio:      9.69
+    Calmar Ratio:       200.05
 
   Drawdown Analysis:
     Max Drawdown:       -0.0068%
     Avg Drawdown:       -0.0008%
     Max DD Duration:    149 bars
-    Recovery Factor:    50.87
+    Recovery Factor:    49.59
     Ulcer Index:        0.000017
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               0.0002
-    Alpha:              0.3520%
+    Alpha:              0.3433%
 
   Execution Quality:
     Total Fees:         72.11
-    Total Slippage:     0.00
+    Total Slippage:     36.03
     Best Month:         0.15%
     Worst Month:        0.00%
     Profitable Months:  2/3

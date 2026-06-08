@@ -5,9 +5,9 @@
 
 Total Trades: 69 (Win Rate: 81.2%)
 Total Return: 0.8% | CAGR: 3.3%
-Sharpe: 8.53 | Sortino: 6.50 | Calmar: 220.23
-Max DD: -0.0151% | Profit Factor: 9.76
-Avg PnL: 11.90 | Expectancy: 11.90
+Sharpe: 8.43 | Sortino: 6.43 | Calmar: 216.12
+Max DD: -0.0151% | Profit Factor: 9.46
+Avg PnL: 11.68 | Expectancy: 11.68
 Trades/Day: 0.75 | Exposure: 12.0%
 Max Consecutive Wins: 12 | Losses: 2
 Monthly Win Rate: 2/3 months profitable
@@ -17,43 +17,43 @@ Monthly Win Rate: 2/3 months profitable
     Winning Trades:     56 (81.2%)
     Losing Trades:      13
     Win Rate:           81.2%
-    Avg Win:            16.34
-    Avg Loss:           -7.21
-    Median PnL:         10.06
+    Avg Win:            16.09
+    Avg Loss:           -7.33
+    Median PnL:         9.76
     Best Trade:         58.90
     Worst Trade:        -15.20
-    Profit Factor:      9.76
-    Payoff Ratio:       2.26
-    Expectancy:         11.90
-    Avg Trade Return:   1.1852%
+    Profit Factor:      9.46
+    Payoff Ratio:       2.20
+    Expectancy:         11.68
+    Avg Trade Return:   1.1635%
     Trades/Day:         0.75
     Avg Holding Bars:   3
     Exposure:           12.0%
 
   Performance Ratios:
-    Total Return:       0.82%
-    CAGR:               3.34%
-    Sharpe Ratio:       8.53
-    Sortino Ratio:      6.50
-    Calmar Ratio:       220.23
+    Total Return:       0.81%
+    CAGR:               3.27%
+    Sharpe Ratio:       8.43
+    Sortino Ratio:      6.43
+    Calmar Ratio:       216.12
 
   Drawdown Analysis:
     Max Drawdown:       -0.0151%
     Avg Drawdown:       -0.0020%
     Max DD Duration:    111 bars
-    Recovery Factor:    54.19
+    Recovery Factor:    53.20
     Ulcer Index:        0.000048
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               0.0001
-    Alpha:              0.8143%
+    Alpha:              0.7991%
 
   Execution Quality:
     Total Fees:         83.15
-    Total Slippage:     0.00
-    Best Month:         0.21%
+    Total Slippage:     41.62
+    Best Month:         0.20%
     Worst Month:        0.00%
     Profitable Months:  2/3
 

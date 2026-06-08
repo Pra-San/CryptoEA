@@ -4,10 +4,10 @@
 ============================================================
 
 Total Trades: 66 (Win Rate: 75.8%)
-Total Return: 0.5% | CAGR: 2.2%
-Sharpe: 8.33 | Sortino: 8.55 | Calmar: 149.21
-Max DD: -0.0146% | Profit Factor: 12.28
-Avg PnL: 8.17 | Expectancy: 8.17
+Total Return: 0.5% | CAGR: 2.1%
+Sharpe: 8.22 | Sortino: 8.52 | Calmar: 145.92
+Max DD: -0.0146% | Profit Factor: 11.76
+Avg PnL: 7.99 | Expectancy: 7.99
 Trades/Day: 0.72 | Exposure: 11.3%
 Max Consecutive Wins: 11 | Losses: 4
 Monthly Win Rate: 2/3 months profitable
@@ -17,42 +17,42 @@ Monthly Win Rate: 2/3 months profitable
     Winning Trades:     50 (75.8%)
     Losing Trades:      16
     Win Rate:           75.8%
-    Avg Win:            11.74
-    Avg Loss:           -2.99
-    Median PnL:         5.62
+    Avg Win:            11.52
+    Avg Loss:           -3.06
+    Median PnL:         5.45
     Best Trade:         38.10
     Worst Trade:        -8.46
-    Profit Factor:      12.28
-    Payoff Ratio:       3.93
-    Expectancy:         8.17
-    Avg Trade Return:   0.8146%
+    Profit Factor:      11.76
+    Payoff Ratio:       3.76
+    Expectancy:         7.99
+    Avg Trade Return:   0.7968%
     Trades/Day:         0.72
     Avg Holding Bars:   3
     Exposure:           11.3%
 
   Performance Ratios:
-    Total Return:       0.54%
-    CAGR:               2.18%
-    Sharpe Ratio:       8.33
-    Sortino Ratio:      8.55
-    Calmar Ratio:       149.21
+    Total Return:       0.53%
+    CAGR:               2.13%
+    Sharpe Ratio:       8.22
+    Sortino Ratio:      8.52
+    Calmar Ratio:       145.92
 
   Drawdown Analysis:
     Max Drawdown:       -0.0146%
-    Avg Drawdown:       -0.0018%
-    Max DD Duration:    183 bars
-    Recovery Factor:    36.87
+    Avg Drawdown:       -0.0019%
+    Max DD Duration:    221 bars
+    Recovery Factor:    36.07
     Ulcer Index:        0.000039
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               0.0001
-    Alpha:              0.5437%
+    Alpha:              0.5320%
 
   Execution Quality:
-    Total Fees:         79.43
-    Total Slippage:     0.00
+    Total Fees:         79.42
+    Total Slippage:     39.73
     Best Month:         0.24%
     Worst Month:        0.00%
     Profitable Months:  2/3

@@ -51,12 +51,18 @@ def write_index_csv(root: Path, runs: list[dict[str, Any]]) -> None:
         "profit_factor",
         "max_drawdown_pct",
         "trades_per_day",
+        "avg_win",
+        "avg_loss",
+        "payoff_ratio",
         "expectancy",
+        "avg_holding_bars",
         "avg_trade_return",
         "total_return_pct",
         "cagr_pct",
         "max_consecutive_losses",
         "exposure_pct",
+        "fee_rate",
+        "slippage_rate",
     ]
 
     with open(root / "run_index.csv", "w", newline="") as f:
@@ -72,6 +78,8 @@ def write_index_csv(root: Path, runs: list[dict[str, Any]]) -> None:
                 "strategy_version": run.get("strategy_version"),
                 "start": period.get("start"),
                 "end": period.get("end"),
+                "fee_rate": run.get("engine_config", {}).get("fee_rate"),
+                "slippage_rate": run.get("engine_config", {}).get("slippage_rate"),
             }
             row.update({field: metric(run, field) for field in fields if field not in row})
             writer.writerow(row)
@@ -317,6 +325,7 @@ def build_html(runs: list[dict[str, Any]]) -> str:
     const pct = value => `${{fmt.format(Number(value || 0))}}%`;
     const num = value => fmt.format(Number(value || 0));
     const metric = (run, key) => run.metrics?.[key] ?? 0;
+    const rateBps = value => `${{fmt.format(Number(value || 0) * 10000)}} bps`;
     let selectedId = runs[0]?.run_id || null;
 
     const filters = {{
@@ -416,6 +425,9 @@ def build_html(runs: list[dict[str, Any]]) -> str:
           ${{metricTile('Sharpe', num(metric(run, 'sharpe_ratio')), metric(run, 'sharpe_ratio') >= 1.2 ? 'positive' : 'negative')}}
           ${{metricTile('Trades/Day', num(metric(run, 'trades_per_day')), '')}}
           ${{metricTile('Max Loss Streak', num(metric(run, 'max_consecutive_losses')), metric(run, 'max_consecutive_losses') > 5 ? 'negative' : '')}}
+          ${{metricTile('Avg Win', num(metric(run, 'avg_win')), 'positive')}}
+          ${{metricTile('Avg Loss', num(metric(run, 'avg_loss')), 'negative')}}
+          ${{metricTile('Avg RR', num(metric(run, 'payoff_ratio')), metric(run, 'payoff_ratio') >= 1 ? 'positive' : 'negative')}}
         </div>
         <div class="bars">
           ${{bar('Win Rate', metric(run, 'win_rate') * 100, 100, pct(metric(run, 'win_rate') * 100), 'var(--teal)')}}
@@ -426,8 +438,12 @@ def build_html(runs: list[dict[str, Any]]) -> str:
           <dt>Run ID</dt><dd>${{escapeHtml(run.run_id)}}</dd>
           <dt>Git SHA</dt><dd>${{escapeHtml(run.git_sha || '')}}</dd>
           <dt>Bars</dt><dd>${{num(run.data?.bars)}}</dd>
+          <dt>Fee Rate</dt><dd>${{rateBps(run.engine_config?.fee_rate)}} per side</dd>
+          <dt>Adverse Exec</dt><dd>${{rateBps(run.engine_config?.slippage_rate)}} per side</dd>
           <dt>Expectancy</dt><dd>${{num(metric(run, 'expectancy'))}}</dd>
+          <dt>Avg Holding</dt><dd>${{num(metric(run, 'avg_holding_bars'))}} bars</dd>
           <dt>Avg Trade Return</dt><dd>${{pct(metric(run, 'avg_trade_return') * 100)}}</dd>
+          <dt>Total Fees</dt><dd>${{num(metric(run, 'total_fees'))}}</dd>
           <dt>Worst Trade</dt><dd>${{num(metric(run, 'worst_trade'))}}</dd>
           <dt>Best Month</dt><dd>${{pct(metric(run, 'best_month') * 100)}}</dd>
           <dt>Worst Month</dt><dd>${{pct(metric(run, 'worst_month') * 100)}}</dd>

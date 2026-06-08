@@ -5,9 +5,9 @@
 
 Total Trades: 77 (Win Rate: 77.9%)
 Total Return: 0.9% | CAGR: 3.8%
-Sharpe: 8.90 | Sortino: 13.56 | Calmar: 443.63
-Max DD: -0.0086% | Profit Factor: 15.28
-Avg PnL: 12.17 | Expectancy: 12.17
+Sharpe: 8.81 | Sortino: 13.25 | Calmar: 422.51
+Max DD: -0.0089% | Profit Factor: 14.70
+Avg PnL: 12.00 | Expectancy: 12.00
 Trades/Day: 0.84 | Exposure: 13.2%
 Max Consecutive Wins: 10 | Losses: 3
 Monthly Win Rate: 2/3 months profitable
@@ -17,42 +17,42 @@ Monthly Win Rate: 2/3 months profitable
     Winning Trades:     60 (77.9%)
     Losing Trades:      17
     Win Rate:           77.9%
-    Avg Win:            16.71
-    Avg Loss:           -3.86
-    Median PnL:         8.41
+    Avg Win:            16.52
+    Avg Loss:           -3.97
+    Median PnL:         8.12
     Best Trade:         81.04
-    Worst Trade:        -8.66
-    Profit Factor:      15.28
-    Payoff Ratio:       4.33
-    Expectancy:         12.17
-    Avg Trade Return:   1.2111%
+    Worst Trade:        -8.97
+    Profit Factor:      14.70
+    Payoff Ratio:       4.17
+    Expectancy:         12.00
+    Avg Trade Return:   1.1943%
     Trades/Day:         0.84
     Avg Holding Bars:   3
     Exposure:           13.2%
 
   Performance Ratios:
-    Total Return:       0.94%
-    CAGR:               3.81%
-    Sharpe Ratio:       8.90
-    Sortino Ratio:      13.56
-    Calmar Ratio:       443.63
+    Total Return:       0.92%
+    CAGR:               3.76%
+    Sharpe Ratio:       8.81
+    Sortino Ratio:      13.25
+    Calmar Ratio:       422.51
 
   Drawdown Analysis:
-    Max Drawdown:       -0.0086%
+    Max Drawdown:       -0.0089%
     Avg Drawdown:       -0.0013%
     Max DD Duration:    88 bars
-    Recovery Factor:    108.98
-    Ulcer Index:        0.000028
+    Recovery Factor:    103.81
+    Ulcer Index:        0.000029
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               0.0001
-    Alpha:              0.9361%
+    Alpha:              0.9231%
 
   Execution Quality:
-    Total Fees:         92.87
-    Total Slippage:     0.00
+    Total Fees:         92.86
+    Total Slippage:     46.41
     Best Month:         0.30%
     Worst Month:        0.00%
     Profitable Months:  2/3

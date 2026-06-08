@@ -3,56 +3,56 @@
   BACKTEST PERFORMANCE REPORT
 ============================================================
 
-Total Trades: 76 (Win Rate: 85.5%)
+Total Trades: 76 (Win Rate: 84.2%)
 Total Return: 1.1% | CAGR: 4.5%
-Sharpe: 9.36 | Sortino: 12.74 | Calmar: 295.43
-Max DD: -0.0154% | Profit Factor: 20.64
-Avg PnL: 14.64 | Expectancy: 14.64
+Sharpe: 9.28 | Sortino: 12.01 | Calmar: 291.25
+Max DD: -0.0154% | Profit Factor: 20.09
+Avg PnL: 14.44 | Expectancy: 14.44
 Trades/Day: 0.83 | Exposure: 13.2%
-Max Consecutive Wins: 13 | Losses: 2
+Max Consecutive Wins: 12 | Losses: 2
 Monthly Win Rate: 2/3 months profitable
 
   Trade Statistics:
     Total Trades:       76
-    Winning Trades:     65 (85.5%)
-    Losing Trades:      11
-    Win Rate:           85.5%
-    Avg Win:            17.99
-    Avg Loss:           -5.15
-    Median PnL:         10.62
-    Best Trade:         94.62
-    Worst Trade:        -9.47
-    Profit Factor:      20.64
-    Payoff Ratio:       3.49
-    Expectancy:         14.64
-    Avg Trade Return:   1.4561%
+    Winning Trades:     64 (84.2%)
+    Losing Trades:      12
+    Win Rate:           84.2%
+    Avg Win:            18.04
+    Avg Loss:           -4.79
+    Median PnL:         10.32
+    Best Trade:         94.61
+    Worst Trade:        -9.46
+    Profit Factor:      20.09
+    Payoff Ratio:       3.77
+    Expectancy:         14.44
+    Avg Trade Return:   1.4359%
     Trades/Day:         0.83
     Avg Holding Bars:   3
     Exposure:           13.2%
 
   Performance Ratios:
-    Total Return:       1.11%
-    CAGR:               4.54%
-    Sharpe Ratio:       9.36
-    Sortino Ratio:      12.74
-    Calmar Ratio:       295.43
+    Total Return:       1.10%
+    CAGR:               4.48%
+    Sharpe Ratio:       9.28
+    Sortino Ratio:      12.01
+    Calmar Ratio:       291.25
 
   Drawdown Analysis:
     Max Drawdown:       -0.0154%
     Avg Drawdown:       -0.0009%
     Max DD Duration:    79 bars
-    Recovery Factor:    72.38
-    Ulcer Index:        0.000026
+    Recovery Factor:    71.37
+    Ulcer Index:        0.000027
 
   Risk Metrics:
     VaR (95%):          0.0000%
     CVaR (95%):         -0.0000%
     Beta:               -0.0000
-    Alpha:              1.1132%
+    Alpha:              1.0977%
 
   Execution Quality:
-    Total Fees:         91.71
-    Total Slippage:     0.00
+    Total Fees:         91.70
+    Total Slippage:     45.88
     Best Month:         0.39%
     Worst Month:        0.00%
     Profitable Months:  2/3
