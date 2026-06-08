@@ -1,0 +1,70 @@
+
+============================================================
+  BACKTEST PERFORMANCE REPORT
+============================================================
+
+Total Trades: 554 (Win Rate: 38.8%)
+Total Return: -70.6% | CAGR: -20.3%
+Sharpe: -2.84 | Sortino: -0.50 | Calmar: -0.28
+Max DD: -72.1157% | Profit Factor: 0.42
+Max DD (R): 127.14R | Avg R: -0.22R
+Avg PnL: -127.49 | Expectancy: -127.49 (-0.22R)
+Trades/Day: 0.28 | Exposure: 4.5%
+Max Consecutive Wins: 10 | Losses: 14
+Monthly Win Rate: 14/65 months profitable
+
+  Trade Statistics:
+    Total Trades:       554
+    Winning Trades:     215 (38.8%)
+    Losing Trades:      339
+    Win Rate:           38.8%
+    Avg Win:            238.56
+    Avg Loss:           -359.64
+    Avg Win (R):        0.39
+    Avg Loss (R):       -0.61
+    Avg R Multiple:     -0.22
+    Median R Multiple:  -0.13
+    Median PnL:         -63.31
+    Best Trade:         1,087.14
+    Worst Trade:        -1,023.90
+    Best Trade (R):     1.19
+    Worst Trade (R):    -1.00
+    Profit Factor:      0.42
+    Payoff Ratio:       0.66
+    Expectancy:         -127.49
+    Expectancy (R):     -0.22
+    Avg Trade Return:   -0.4327%
+    Trades/Day:         0.28
+    Avg Holding Bars:   3
+    Exposure:           4.5%
+
+  Performance Ratios:
+    Total Return:       -70.63%
+    CAGR:               -20.26%
+    Sharpe Ratio:       -2.84
+    Sortino Ratio:      -0.50
+    Calmar Ratio:       -0.28
+
+  Drawdown Analysis:
+    Max Drawdown:       -72.1157%
+    Max Drawdown (R):   127.14R
+    Avg Drawdown:       -36.8956%
+    Avg Drawdown (R):   63.34R
+    Max DD Duration:    45835 bars
+    Recovery Factor:    0.98
+    Ulcer Index:        0.441933
+
+  Risk Metrics:
+    VaR (95%):          0.0000%
+    CVaR (95%):         -0.0043%
+    Beta:               0.0026
+    Alpha:              -70.7849%
+
+  Execution Quality:
+    Total Fees:         32,740.13
+    Total Slippage:     32,702.23
+    Best Month:         3.94%
+    Worst Month:        -8.00%
+    Profitable Months:  14/65
+
+============================================================

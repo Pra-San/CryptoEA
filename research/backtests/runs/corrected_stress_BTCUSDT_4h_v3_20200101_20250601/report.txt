@@ -1,0 +1,70 @@
+
+============================================================
+  BACKTEST PERFORMANCE REPORT
+============================================================
+
+Total Trades: 166 (Win Rate: 53.6%)
+Total Return: 0.6% | CAGR: 0.1%
+Sharpe: 1.61 | Sortino: 0.48 | Calmar: 1.00
+Max DD: -0.1062% | Profit Factor: 1.54
+Max DD (R): 4.76R | Avg R: 0.14R
+Avg PnL: 3.48 | Expectancy: 3.48 (0.14R)
+Trades/Day: 0.08 | Exposure: 3.8%
+Max Consecutive Wins: 13 | Losses: 6
+Monthly Win Rate: 28/65 months profitable
+
+  Trade Statistics:
+    Total Trades:       166
+    Winning Trades:     89 (53.6%)
+    Losing Trades:      77
+    Win Rate:           53.6%
+    Avg Win:            18.49
+    Avg Loss:           -13.86
+    Avg Win (R):        0.83
+    Avg Loss (R):       -0.65
+    Avg R Multiple:     0.14
+    Median R Multiple:  0.09
+    Median PnL:         1.53
+    Best Trade:         64.48
+    Worst Trade:        -33.95
+    Best Trade (R):     1.69
+    Worst Trade (R):    -1.00
+    Profit Factor:      1.54
+    Payoff Ratio:       1.33
+    Expectancy:         3.48
+    Expectancy (R):     0.14
+    Avg Trade Return:   0.3476%
+    Trades/Day:         0.08
+    Avg Holding Bars:   2
+    Exposure:           3.8%
+
+  Performance Ratios:
+    Total Return:       0.58%
+    CAGR:               0.11%
+    Sharpe Ratio:       1.61
+    Sortino Ratio:      0.48
+    Calmar Ratio:       1.00
+
+  Drawdown Analysis:
+    Max Drawdown:       -0.1062%
+    Max Drawdown (R):   4.76R
+    Avg Drawdown:       -0.0178%
+    Avg Drawdown (R):   1.83R
+    Max DD Duration:    1361 bars
+    Recovery Factor:    5.45
+    Ulcer Index:        0.000302
+
+  Risk Metrics:
+    VaR (95%):          0.0000%
+    CVaR (95%):         -0.0001%
+    Beta:               0.0000
+    Alpha:              0.5728%
+
+  Execution Quality:
+    Total Fees:         333.13
+    Total Slippage:     333.54
+    Best Month:         0.11%
+    Worst Month:        -0.08%
+    Profitable Months:  28/65
+
+============================================================

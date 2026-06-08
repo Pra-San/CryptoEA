@@ -50,9 +50,15 @@ def write_index_csv(root: Path, runs: list[dict[str, Any]]) -> None:
         "calmar_ratio",
         "profit_factor",
         "max_drawdown_pct",
+        "max_drawdown_r",
+        "avg_drawdown_r",
         "trades_per_day",
         "avg_win",
         "avg_loss",
+        "avg_win_r",
+        "avg_loss_r",
+        "avg_r_multiple",
+        "expectancy_r",
         "payoff_ratio",
         "expectancy",
         "avg_holding_bars",
@@ -383,7 +389,7 @@ def build_html(runs: list[dict[str, Any]]) -> str:
       }});
       mount.innerHTML = `<table>
         <thead><tr>
-          <th>Run</th><th>Mode</th><th>Market</th><th>Trades</th><th>WR</th><th>Sharpe</th><th>PF</th><th>Max DD</th><th>Trades/Day</th>
+          <th>Run</th><th>Mode</th><th>Market</th><th>Trades</th><th>WR</th><th>Sharpe</th><th>PF</th><th>Max DD</th><th>Max DD R</th><th>Trades/Day</th>
         </tr></thead>
         <tbody>${{sorted.map(run => `
           <tr data-id="${{escapeHtml(run.run_id)}}" class="${{run.run_id === selectedId ? 'selected' : ''}}">
@@ -395,6 +401,7 @@ def build_html(runs: list[dict[str, Any]]) -> str:
             <td>${{num(metric(run, 'sharpe_ratio'))}}</td>
             <td>${{num(metric(run, 'profit_factor'))}}</td>
             <td class="${{metric(run, 'max_drawdown_pct') > 10 ? 'negative' : 'warning'}}">${{pct(metric(run, 'max_drawdown_pct'))}}</td>
+            <td class="${{metric(run, 'max_drawdown_r') > 6 ? 'negative' : 'warning'}}">${{num(metric(run, 'max_drawdown_r'))}}R</td>
             <td>${{num(metric(run, 'trades_per_day'))}}</td>
           </tr>`).join('')}}</tbody>
       </table>`;
@@ -421,6 +428,7 @@ def build_html(runs: list[dict[str, Any]]) -> str:
         <div class="metrics">
           ${{metricTile('Total Return', pct(metric(run, 'total_return_pct')), metric(run, 'total_return_pct') >= 0 ? 'positive' : 'negative')}}
           ${{metricTile('Max Drawdown', pct(metric(run, 'max_drawdown_pct')), metric(run, 'max_drawdown_pct') > 10 ? 'negative' : 'warning')}}
+          ${{metricTile('Max DD R', `${{num(metric(run, 'max_drawdown_r'))}}R`, metric(run, 'max_drawdown_r') > 6 ? 'negative' : 'warning')}}
           ${{metricTile('Profit Factor', num(metric(run, 'profit_factor')), metric(run, 'profit_factor') >= 1.5 ? 'positive' : 'negative')}}
           ${{metricTile('Sharpe', num(metric(run, 'sharpe_ratio')), metric(run, 'sharpe_ratio') >= 1.2 ? 'positive' : 'negative')}}
           ${{metricTile('Trades/Day', num(metric(run, 'trades_per_day')), '')}}
@@ -428,11 +436,14 @@ def build_html(runs: list[dict[str, Any]]) -> str:
           ${{metricTile('Avg Win', num(metric(run, 'avg_win')), 'positive')}}
           ${{metricTile('Avg Loss', num(metric(run, 'avg_loss')), 'negative')}}
           ${{metricTile('Avg RR', num(metric(run, 'payoff_ratio')), metric(run, 'payoff_ratio') >= 1 ? 'positive' : 'negative')}}
+          ${{metricTile('Avg R', `${{num(metric(run, 'avg_r_multiple'))}}R`, metric(run, 'avg_r_multiple') > 0 ? 'positive' : 'negative')}}
+          ${{metricTile('Expectancy R', `${{num(metric(run, 'expectancy_r'))}}R`, metric(run, 'expectancy_r') > 0 ? 'positive' : 'negative')}}
         </div>
         <div class="bars">
           ${{bar('Win Rate', metric(run, 'win_rate') * 100, 100, pct(metric(run, 'win_rate') * 100), 'var(--teal)')}}
           ${{bar('Exposure', metric(run, 'exposure_pct') * 100, 100, pct(metric(run, 'exposure_pct') * 100), 'var(--blue)')}}
           ${{bar('OOS DD', metric(run, 'max_drawdown_pct'), 15, pct(metric(run, 'max_drawdown_pct')), 'var(--amber)')}}
+          ${{bar('R DD', metric(run, 'max_drawdown_r'), 10, `${{num(metric(run, 'max_drawdown_r'))}}R`, 'var(--amber)')}}
         </div>
         <dl>
           <dt>Run ID</dt><dd>${{escapeHtml(run.run_id)}}</dd>
@@ -441,6 +452,9 @@ def build_html(runs: list[dict[str, Any]]) -> str:
           <dt>Fee Rate</dt><dd>${{rateBps(run.engine_config?.fee_rate)}} per side</dd>
           <dt>Adverse Exec</dt><dd>${{rateBps(run.engine_config?.slippage_rate)}} per side</dd>
           <dt>Expectancy</dt><dd>${{num(metric(run, 'expectancy'))}}</dd>
+          <dt>Expectancy R</dt><dd>${{num(metric(run, 'expectancy_r'))}}R</dd>
+          <dt>Avg Win R</dt><dd>${{num(metric(run, 'avg_win_r'))}}R</dd>
+          <dt>Avg Loss R</dt><dd>${{num(metric(run, 'avg_loss_r'))}}R</dd>
           <dt>Avg Holding</dt><dd>${{num(metric(run, 'avg_holding_bars'))}} bars</dd>
           <dt>Avg Trade Return</dt><dd>${{pct(metric(run, 'avg_trade_return') * 100)}}</dd>
           <dt>Total Fees</dt><dd>${{num(metric(run, 'total_fees'))}}</dd>

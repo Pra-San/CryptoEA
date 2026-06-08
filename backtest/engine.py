@@ -62,6 +62,8 @@ class Trade:
     exit_reason: str = ""
     pnl: Optional[float] = None
     pnl_pct: Optional[float] = None
+    risk_amount: float = 0.0
+    r_multiple: float = 0.0
     fees: float = 0.0
     slippage: float = 0.0
     holding_bars: int = 0

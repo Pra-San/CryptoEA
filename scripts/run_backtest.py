@@ -86,6 +86,8 @@ class MomentumBreakoutConfig:
     trend_sma_period: int = 200
     volatility_min: float = 0.002
     volatility_max: float = 0.05
+    allow_long: bool = True
+    allow_short: bool = True
 
 
 @dataclass
@@ -343,7 +345,8 @@ class MomentumBreakoutStrategy:
         long_trend = df["above_trend"] if c.use_trend_filter else pd.Series(True, index=df.index)
         long_vol_zone = df["in_vol_zone"]
 
-        df.loc[long_break & long_vol & long_trend & long_vol_zone, "signal"] = 1
+        if c.allow_long:
+            df.loc[long_break & long_vol & long_trend & long_vol_zone, "signal"] = 1
 
         # SHORT: price breaks below Donchian low + volume + in downtrend
         short_break = close < df["donchian_low"].shift(1)
@@ -351,7 +354,8 @@ class MomentumBreakoutStrategy:
         short_trend = ~df["above_trend"] if c.use_trend_filter else pd.Series(True, index=df.index)
         short_vol_zone = df["in_vol_zone"]
 
-        df.loc[short_break & short_vol & short_trend & short_vol_zone, "signal"] = -1
+        if c.allow_short:
+            df.loc[short_break & short_vol & short_trend & short_vol_zone, "signal"] = -1
 
         # --- Stop Loss & Take Profit ---
         df["stop_loss"] = np.nan
@@ -387,9 +391,12 @@ class VectorizedBacktestConfig:
     leverage: int = 1
     risk_per_trade: float = 0.01
     min_trade_notional: float = 50.0
-    max_position_pct: float = 0.10  # max 10% of equity per position
+    max_position_pct: float = 1.0  # max 100% of equity per position
+    sizing_mode: str = "risk_based"  # risk_based or fixed_notional
     min_holding_bars: int = 3
     max_holding_bars: int = 72
+    exit_on_flat_signal: bool = False
+    exit_on_opposite_signal: bool = True
 
 
 class VectorizedBacktestEngine:
@@ -429,41 +436,51 @@ class VectorizedBacktestEngine:
         signal_diff = np.zeros(len(signals), dtype=int)
         signal_diff[1:] = signals[1:] - signals[:-1]
 
-        # Entry points: signal goes 0→1 (long) or 0→-1 (short)
-        long_entries = np.where(signal_diff == 1)[0]
-        short_entries = np.where(signal_diff == -1)[0]
-        all_entries = np.sort(np.unique(np.concatenate([long_entries, short_entries])))
+        # Signals are known only after the signal bar closes, so execute on
+        # the next bar's open. This avoids lookahead from using a close-derived
+        # signal at the same bar's open.
+        long_signal_bars = np.where(signal_diff == 1)[0]
+        short_signal_bars = np.where(signal_diff == -1)[0]
+        all_signal_bars = np.sort(np.unique(np.concatenate([long_signal_bars, short_signal_bars])))
+        entry_bars = all_signal_bars + 1
+        valid_entries = entry_bars < len(signals)
+        entry_pairs = list(zip(all_signal_bars[valid_entries], entry_bars[valid_entries]))
 
-        if len(all_entries) == 0:
+        if len(entry_pairs) == 0:
             logger.warning("No signals generated!")
             return self._empty_result()
 
         # Step 2: For each entry, simulate the trade to find exit
         trades = []
         balance = self.config.initial_balance
+        last_exit_idx = -1
 
-        for entry_idx in all_entries:
-            sig = signals[entry_idx]
+        for signal_idx, entry_idx in entry_pairs:
+            if entry_idx <= last_exit_idx:
+                continue
+
+            sig = signals[signal_idx]
             if sig == 0:
                 continue
 
             raw_entry_price = opens[entry_idx]
             entry_price = raw_entry_price * (1 + self.config.slippage_rate * sig)
             entry_time = timestamps[entry_idx]
-            sl = stops[entry_idx] if not np.isnan(stops[entry_idx]) else None
-            tp = tps[entry_idx] if not np.isnan(tps[entry_idx]) else None
+            sl = stops[signal_idx] if not np.isnan(stops[signal_idx]) else None
+            tp = tps[signal_idx] if not np.isnan(tps[signal_idx]) else None
 
             # Position size
-            notional = balance * self.config.risk_per_trade * (self.config.initial_balance / (entry_price * 1e6) * 1e6)
-            # Simplified: fixed fraction of balance
-            position_notional = balance * self.config.risk_per_trade
+            quantity, position_notional = self._calculate_position_size(
+                sig=sig,
+                entry_price=entry_price,
+                stop_loss=sl,
+                balance=balance,
+            )
             if position_notional < self.config.min_trade_notional:
                 continue
-            if position_notional > balance * self.config.max_position_pct:
-                position_notional = balance * self.config.max_position_pct
 
-            quantity = position_notional / entry_price
             entry_fee = position_notional * self.config.fee_rate
+            risk_amount = self._initial_risk_amount(sig, entry_price, sl, quantity, position_notional)
 
             # Find exit: whichever trigger is hit first
             # Search from entry+1 to end
@@ -474,6 +491,7 @@ class VectorizedBacktestEngine:
 
             if exit_idx is None or exit_idx < entry_idx + self.config.min_holding_bars:
                 continue  # No valid exit found
+            last_exit_idx = exit_idx
 
             raw_exit_price = closes[exit_idx]
             exit_price = raw_exit_price * (1 - self.config.slippage_rate * sig)
@@ -509,6 +527,7 @@ class VectorizedBacktestEngine:
             )
             net_pnl = gross_pnl - entry_fee - exit_fee
             pnl_pct = net_pnl / position_notional if position_notional > 0 else 0
+            r_multiple = net_pnl / risk_amount if risk_amount > 0 else 0
 
             balance += net_pnl
 
@@ -525,6 +544,8 @@ class VectorizedBacktestEngine:
                 "exit_reason": exit_reason,
                 "pnl": net_pnl,
                 "pnl_pct": pnl_pct,
+                "risk_amount": risk_amount,
+                "r_multiple": r_multiple,
                 "fees": entry_fee + exit_fee,
                 "slippage": slippage_cost,
                 "holding_bars": exit_idx - entry_idx,
@@ -581,12 +602,62 @@ class VectorizedBacktestEngine:
                     return i
 
             # Signal reversal exit
-            if signals[i] == 0 and i > entry_idx + min_hold:
+            if self.config.exit_on_opposite_signal and signals[i] == -sig:
+                return i
+            if self.config.exit_on_flat_signal and signals[i] == 0 and i > entry_idx + min_hold:
                 return i
 
         if search_end <= entry_idx + min_hold:
             return None
         return search_end - 1  # Exit at max holding horizon
+
+    def _initial_risk_amount(
+        self,
+        sig: int,
+        entry_price: float,
+        stop_loss: Optional[float],
+        quantity: float,
+        position_notional: float,
+    ) -> float:
+        """Estimate 1R as initial stop loss including fees and adverse stop fill."""
+        fee_risk = 2 * position_notional * self.config.fee_rate
+        if stop_loss is None or np.isnan(stop_loss):
+            return max(position_notional * self.config.risk_per_trade + fee_risk, 1e-12)
+
+        stop_fill = stop_loss * (1 - self.config.slippage_rate) if sig == 1 else stop_loss * (1 + self.config.slippage_rate)
+        stop_gross_pnl = (stop_fill - entry_price) * quantity * sig
+        return max(abs(stop_gross_pnl) + fee_risk, 1e-12)
+
+    def _calculate_position_size(
+        self,
+        sig: int,
+        entry_price: float,
+        stop_loss: Optional[float],
+        balance: float,
+    ) -> Tuple[float, float]:
+        """Calculate quantity and notional using the configured sizing mode."""
+        max_notional = balance * self.config.max_position_pct
+
+        if self.config.sizing_mode == "fixed_notional" or stop_loss is None or np.isnan(stop_loss):
+            position_notional = min(balance * self.config.risk_per_trade, max_notional)
+            return position_notional / entry_price, position_notional
+
+        stop_fill = stop_loss * (1 - self.config.slippage_rate) if sig == 1 else stop_loss * (1 + self.config.slippage_rate)
+        unit_price_risk = abs(entry_price - stop_fill)
+        unit_fee_risk = 2 * entry_price * self.config.fee_rate
+        unit_risk = unit_price_risk + unit_fee_risk
+        if unit_risk <= 0:
+            position_notional = min(balance * self.config.risk_per_trade, max_notional)
+            return position_notional / entry_price, position_notional
+
+        risk_budget = balance * self.config.risk_per_trade
+        quantity = risk_budget / unit_risk
+        position_notional = quantity * entry_price
+        if position_notional > max_notional:
+            position_notional = max_notional
+            quantity = position_notional / entry_price
+
+        return quantity, position_notional
 
     def _build_equity_curve(self, trades: List[Dict], timestamps: pd.DatetimeIndex,
                             closes: np.ndarray) -> List[float]:
@@ -901,6 +972,40 @@ def parse_args() -> argparse.Namespace:
                         help="Initial balance (default: 100000)")
     parser.add_argument("--risk-per-trade", type=float, default=0.01,
                         help="Risk per trade (default: 0.01 = 1%%)")
+    parser.add_argument("--max-position-pct", type=float, default=1.0,
+                        help="Maximum position notional as fraction of equity (default: 1.0)")
+    parser.add_argument("--sizing-mode", choices=["risk_based", "fixed_notional"], default="risk_based",
+                        help="Position sizing mode (default: risk_based)")
+    parser.add_argument("--exit-on-flat-signal", action="store_true",
+                        help="Exit when signal returns to 0 after the minimum holding period")
+    parser.add_argument("--no-opposite-signal-exit", dest="exit_on_opposite_signal", action="store_false", default=True,
+                        help="Disable exits on opposite entry signals")
+    parser.add_argument("--donchian-lookback", type=int, default=None,
+                        help="v3 Donchian channel lookback")
+    parser.add_argument("--volume-lookback", type=int, default=None,
+                        help="Volume SMA lookback")
+    parser.add_argument("--volume-mult", type=float, default=None,
+                        help="Volume confirmation multiple")
+    parser.add_argument("--atr-stop-mult", type=float, default=None,
+                        help="ATR stop-loss multiple")
+    parser.add_argument("--atr-tp-mult", type=float, default=None,
+                        help="ATR take-profit multiple")
+    parser.add_argument("--min-holding-bars", type=int, default=None,
+                        help="Minimum holding period in bars")
+    parser.add_argument("--max-holding-bars", type=int, default=None,
+                        help="Maximum holding period in bars")
+    parser.add_argument("--trend-sma-period", type=int, default=None,
+                        help="v3 trend SMA period")
+    parser.add_argument("--volatility-min", type=float, default=None,
+                        help="Minimum daily-volatility filter")
+    parser.add_argument("--volatility-max", type=float, default=None,
+                        help="Maximum daily-volatility filter")
+    parser.add_argument("--no-trend-filter", dest="use_trend_filter", action="store_false", default=None,
+                        help="Disable v3 SMA trend filter")
+    parser.add_argument("--disable-longs", dest="allow_long", action="store_false", default=None,
+                        help="Disable long entries")
+    parser.add_argument("--disable-shorts", dest="allow_short", action="store_false", default=None,
+                        help="Disable short entries")
     parser.add_argument("--fee-rate", type=float, default=0.0006,
                         help="Per-side commission rate (default: 0.0006 = 0.06%%)")
     parser.add_argument("--slippage-rate", type=float, default=0.0003,
@@ -933,6 +1038,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test-end", type=str, default=None,
                         help=argparse.SUPPRESS)
     return parser.parse_args()
+
+
+def apply_optional_config(config, args: argparse.Namespace, names: List[str]) -> None:
+    """Apply optional CLI overrides to a strategy config."""
+    for name in names:
+        value = getattr(args, name, None)
+        if value is not None and hasattr(config, name):
+            setattr(config, name, value)
 
 
 def vectorized_preprocess(df: pd.DataFrame, timeframe: str = "1h") -> pd.DataFrame:
@@ -1075,17 +1188,51 @@ def run_backtest(args) -> Dict:
 
     # Initialize strategy
     if args.strategy == "v2":
-        strategy = MeanReversionStrategy(MeanReversionConfig(
+        config = MeanReversionConfig(
             symbol=args.symbol,
             timeframe=args.timeframe,
             risk_per_trade=args.risk_per_trade,
-        ))
+        )
+        apply_optional_config(
+            config,
+            args,
+            [
+                "volume_lookback",
+                "atr_stop_mult",
+                "atr_tp_mult",
+                "min_holding_bars",
+                "max_holding_bars",
+                "volatility_min",
+                "volatility_max",
+            ],
+        )
+        strategy = MeanReversionStrategy(config)
     elif args.strategy == "v3":
-        strategy = MomentumBreakoutStrategy(MomentumBreakoutConfig(
+        config = MomentumBreakoutConfig(
             symbol=args.symbol,
             timeframe=args.timeframe,
             risk_per_trade=args.risk_per_trade,
-        ))
+        )
+        apply_optional_config(
+            config,
+            args,
+            [
+                "donchian_lookback",
+                "volume_lookback",
+                "volume_mult",
+                "atr_stop_mult",
+                "atr_tp_mult",
+                "min_holding_bars",
+                "max_holding_bars",
+                "trend_sma_period",
+                "volatility_min",
+                "volatility_max",
+                "use_trend_filter",
+                "allow_long",
+                "allow_short",
+            ],
+        )
+        strategy = MomentumBreakoutStrategy(config)
     else:
         raise ValueError(f"Unknown strategy: {args.strategy}")
 
@@ -1098,6 +1245,12 @@ def run_backtest(args) -> Dict:
         fee_rate=args.fee_rate,
         slippage_rate=args.slippage_rate,
         risk_per_trade=args.risk_per_trade,
+        max_position_pct=args.max_position_pct,
+        sizing_mode=args.sizing_mode,
+        min_holding_bars=strategy.config.min_holding_bars,
+        max_holding_bars=strategy.config.max_holding_bars,
+        exit_on_flat_signal=args.exit_on_flat_signal,
+        exit_on_opposite_signal=args.exit_on_opposite_signal,
     )
 
     engine = VectorizedBacktestEngine(df, bt_config, args.symbol)
@@ -1120,6 +1273,8 @@ def run_backtest(args) -> Dict:
                 'exit_reason': t['exit_reason'],
                 'pnl': t['pnl'],
                 'pnl_pct': t['pnl_pct'],
+                'risk_amount': t.get('risk_amount', 0),
+                'r_multiple': t.get('r_multiple', 0),
                 'fees': t['fees'],
                 'slippage': t.get('slippage', 0),
                 'holding_bars': t['holding_bars'],
@@ -1232,9 +1387,15 @@ def run_optimization(args, base_result: Dict):
             test_df = strategy.initialize(df)
             bt_config = VectorizedBacktestConfig(
                 initial_balance=args.balance,
-                fee_rate=0.0006,
-                slippage_rate=0.0003,
+                fee_rate=args.fee_rate,
+                slippage_rate=args.slippage_rate,
                 risk_per_trade=args.risk_per_trade,
+                max_position_pct=args.max_position_pct,
+                sizing_mode=args.sizing_mode,
+                min_holding_bars=strategy.config.min_holding_bars,
+                max_holding_bars=strategy.config.max_holding_bars,
+                exit_on_flat_signal=args.exit_on_flat_signal,
+                exit_on_opposite_signal=args.exit_on_opposite_signal,
             )
             engine = VectorizedBacktestEngine(test_df, bt_config, args.symbol)
             result = engine.run()
@@ -1255,6 +1416,8 @@ def run_optimization(args, base_result: Dict):
                         'exit_reason': t['exit_reason'],
                         'pnl': t['pnl'],
                         'pnl_pct': t['pnl_pct'],
+                        'risk_amount': t.get('risk_amount', 0),
+                        'r_multiple': t.get('r_multiple', 0),
                         'fees': t['fees'],
                         'slippage': t.get('slippage', 0),
                         'holding_bars': t['holding_bars'],

@@ -1,0 +1,70 @@
+
+============================================================
+  BACKTEST PERFORMANCE REPORT
+============================================================
+
+Total Trades: 648 (Win Rate: 37.7%)
+Total Return: -77.0% | CAGR: -23.8%
+Sharpe: -3.24 | Sortino: -0.61 | Calmar: -0.31
+Max DD: -77.8457% | Profit Factor: 0.39
+Max DD (R): 151.21R | Avg R: -0.23R
+Avg PnL: -118.82 | Expectancy: -118.82 (-0.23R)
+Trades/Day: 0.33 | Exposure: 5.3%
+Max Consecutive Wins: 7 | Losses: 8
+Monthly Win Rate: 9/65 months profitable
+
+  Trade Statistics:
+    Total Trades:       648
+    Winning Trades:     244 (37.7%)
+    Losing Trades:      404
+    Win Rate:           37.7%
+    Avg Win:            197.82
+    Avg Loss:           -310.06
+    Avg Win (R):        0.37
+    Avg Loss (R):       -0.59
+    Avg R Multiple:     -0.23
+    Median R Multiple:  -0.15
+    Median PnL:         -68.51
+    Best Trade:         1,068.38
+    Worst Trade:        -1,018.05
+    Best Trade (R):     1.18
+    Worst Trade (R):    -1.00
+    Profit Factor:      0.39
+    Payoff Ratio:       0.64
+    Expectancy:         -118.82
+    Expectancy (R):     -0.23
+    Avg Trade Return:   -0.3895%
+    Trades/Day:         0.33
+    Avg Holding Bars:   3
+    Exposure:           5.3%
+
+  Performance Ratios:
+    Total Return:       -77.00%
+    CAGR:               -23.78%
+    Sharpe Ratio:       -3.24
+    Sortino Ratio:      -0.61
+    Calmar Ratio:       -0.31
+
+  Drawdown Analysis:
+    Max Drawdown:       -77.8457%
+    Max Drawdown (R):   151.21R
+    Avg Drawdown:       -45.4392%
+    Avg Drawdown (R):   77.97R
+    Max DD Duration:    46904 bars
+    Recovery Factor:    0.99
+    Ulcer Index:        0.513114
+
+  Risk Metrics:
+    VaR (95%):          0.0000%
+    CVaR (95%):         -0.0050%
+    Beta:               0.0043
+    Alpha:              -77.2056%
+
+  Execution Quality:
+    Total Fees:         36,915.81
+    Total Slippage:     36,875.72
+    Best Month:         1.59%
+    Worst Month:        -7.43%
+    Profitable Months:  9/65
+
+============================================================

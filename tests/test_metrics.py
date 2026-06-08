@@ -18,6 +18,7 @@ class TestBacktestMetrics:
             "exit_time": pd.date_range("2024-01-01 02:00:00", periods=10, freq="1h"),
             "pnl": [100.0, -50.0, 150.0, -30.0, 200.0, -80.0, 120.0, -20.0, 180.0, -40.0],
             "return_pct": [0.01, -0.005, 0.015, -0.003, 0.02, -0.008, 0.012, -0.002, 0.018, -0.004],
+            "risk_amount": [100.0] * 10,
         })
 
         self.equity_curve = pd.Series(
@@ -78,3 +79,13 @@ class TestBacktestMetrics:
 
         assert result["total_trades"] == 0
         assert result["win_rate"] == 0.0
+
+    def test_calculate_returns_r_metrics(self) -> None:
+        """Test R-multiple and cumulative-R drawdown calculations."""
+        result = self.metrics.calculate_all()
+
+        assert result["avg_r_multiple"] == pytest.approx(0.53)
+        assert result["expectancy_r"] == pytest.approx(0.53)
+        assert result["avg_win_r"] == pytest.approx(1.5)
+        assert result["avg_loss_r"] == pytest.approx(-0.44)
+        assert result["max_drawdown_r"] == pytest.approx(0.8)

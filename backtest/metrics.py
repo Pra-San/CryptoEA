@@ -48,8 +48,10 @@ class PerformanceMetrics:
 
     # Drawdown Analysis
     max_drawdown: float = 0.0
+    max_drawdown_r: float = 0.0
     max_drawdown_duration: int = 0
     avg_drawdown: float = 0.0
+    avg_drawdown_r: float = 0.0
     recovery_factor: float = 0.0
     ulcer_index: float = 0.0
 
@@ -60,10 +62,17 @@ class PerformanceMetrics:
     avg_pnl: float = 0.0
     median_pnl: float = 0.0
     expectancy: float = 0.0
+    expectancy_r: float = 0.0
     avg_trade_return: float = 0.0
     median_trade_return: float = 0.0
     best_trade: float = 0.0
     worst_trade: float = 0.0
+    avg_win_r: float = 0.0
+    avg_loss_r: float = 0.0
+    avg_r_multiple: float = 0.0
+    median_r_multiple: float = 0.0
+    best_trade_r: float = 0.0
+    worst_trade_r: float = 0.0
     payoff_ratio: float = 0.0
     trades_per_day: float = 0.0
     avg_holding_bars: int = 0
@@ -138,6 +147,7 @@ class BacktestMetrics:
 
         pnls = trade_log[pnl_col].dropna().astype(float) if pnl_col else pd.Series(dtype=float)
         returns = trade_log[return_col].dropna().astype(float) if return_col else pd.Series(dtype=float)
+        r_multiples = self._r_multiples_from_trade_log(trade_log, pnls)
         wins = pnls[pnls > 0]
         losses = pnls[pnls <= 0]
 
@@ -167,6 +177,7 @@ class BacktestMetrics:
         m.payoff_ratio = abs(m.avg_win / m.avg_loss) if m.avg_loss else 0.0
         m.max_consecutive_wins = self._max_consecutive(pnls.tolist(), lambda x: x > 0)
         m.max_consecutive_losses = self._max_consecutive(pnls.tolist(), lambda x: x <= 0)
+        self._apply_r_metrics(m, r_multiples)
 
         if equity is not None and len(equity) > 1:
             equity = equity.astype(float)
@@ -180,6 +191,8 @@ class BacktestMetrics:
             m.max_drawdown = float(dd.min()) if len(dd) else 0.0
             m.max_drawdown_duration = self._max_drawdown_duration(dd)
             m.calmar_ratio = abs(m.total_return / m.max_drawdown) if m.max_drawdown else 0.0
+
+        self._apply_legacy_r_drawdown(m, trade_log, r_multiples)
 
         return self._metrics_to_dict(m)
 
@@ -209,6 +222,7 @@ class BacktestMetrics:
         # --- Trade Statistics ---
         pnls = [t.pnl for t in completed_trades if t.pnl is not None]
         pnl_pcts = [t.pnl_pct for t in completed_trades if t.pnl_pct is not None]
+        r_multiples = self._r_multiples_from_trades(completed_trades)
 
         wins = [p for p in pnls if p > 0]
         losses = [p for p in pnls if p <= 0]
@@ -227,6 +241,7 @@ class BacktestMetrics:
         metrics.gross_loss = abs(sum(losses))
         metrics.expectancy = metrics.avg_win * metrics.win_rate + metrics.avg_loss * (1 - metrics.win_rate)
         metrics.payoff_ratio = abs(metrics.avg_win / metrics.avg_loss) if metrics.avg_loss != 0 else 0
+        self._apply_r_metrics(metrics, pd.Series(r_multiples, dtype=float))
 
         if pnl_pcts:
             metrics.avg_trade_return = float(np.mean(pnl_pcts))
@@ -297,6 +312,8 @@ class BacktestMetrics:
             metrics.recovery_factor = abs(metrics.total_return / metrics.max_drawdown) if metrics.max_drawdown != 0 else 0
             metrics.ulcer_index = np.sqrt(np.mean(dd ** 2))
 
+        self._apply_trade_r_drawdown(metrics, completed_trades)
+
         # --- Risk Metrics ---
         if equity is not None:
             returns = equity.pct_change().dropna()
@@ -366,7 +383,8 @@ class BacktestMetrics:
             f"Total Return: {m.total_return:.1%} | CAGR: {m.cagr:.1%}",
             f"Sharpe: {m.sharpe_ratio:.2f} | Sortino: {m.sortino_ratio:.2f} | Calmar: {m.calmar_ratio:.2f}",
             f"Max DD: {m.max_drawdown:.4%} | Profit Factor: {m.profit_factor:.2f}",
-            f"Avg PnL: {m.avg_pnl:,.2f} | Expectancy: {m.expectancy:,.2f}",
+            f"Max DD (R): {m.max_drawdown_r:.2f}R | Avg R: {m.avg_r_multiple:.2f}R",
+            f"Avg PnL: {m.avg_pnl:,.2f} | Expectancy: {m.expectancy:,.2f} ({m.expectancy_r:.2f}R)",
             f"Trades/Day: {m.trades_per_day:.2f} | Exposure: {m.exposure_pct:.1%}",
             f"Max Consecutive Wins: {m.max_consecutive_wins} | Losses: {m.max_consecutive_losses}",
         ]
@@ -375,6 +393,107 @@ class BacktestMetrics:
             lines.append(f"Monthly Win Rate: {m.profitable_months}/{m.total_months} months profitable")
 
         return "\n".join(lines)
+
+    def _r_multiples_from_trade_log(self, trade_log: pd.DataFrame, pnls: pd.Series) -> pd.Series:
+        """Return per-trade R multiples from a legacy trade log when available."""
+        if "r_multiple" in trade_log.columns:
+            return trade_log["r_multiple"].dropna().astype(float)
+        if "risk_amount" in trade_log.columns:
+            risk = trade_log["risk_amount"].replace(0, np.nan).astype(float)
+            aligned_pnls = trade_log[pnls.name].astype(float) if pnls.name in trade_log.columns else pnls
+            return (aligned_pnls / risk).replace([np.inf, -np.inf], np.nan).dropna()
+        return pd.Series(dtype=float)
+
+    def _r_multiples_from_trades(self, trades: List[Trade]) -> List[float]:
+        """Return per-trade R multiples from completed trade-like objects."""
+        values: List[float] = []
+        for trade in trades:
+            r_multiple = getattr(trade, "r_multiple", None)
+            if r_multiple is None:
+                risk_amount = getattr(trade, "risk_amount", None)
+                pnl = getattr(trade, "pnl", None)
+                if risk_amount and pnl is not None:
+                    r_multiple = pnl / risk_amount
+            if r_multiple is None:
+                continue
+            r_value = float(r_multiple)
+            if np.isfinite(r_value):
+                values.append(r_value)
+        return values
+
+    def _apply_r_metrics(self, metrics: PerformanceMetrics, r_multiples: pd.Series) -> None:
+        """Populate R-multiple trade statistics."""
+        if r_multiples is None or len(r_multiples) == 0:
+            return
+        r_multiples = pd.Series(r_multiples, dtype=float).replace([np.inf, -np.inf], np.nan).dropna()
+        if len(r_multiples) == 0:
+            return
+        wins = r_multiples[r_multiples > 0]
+        losses = r_multiples[r_multiples <= 0]
+        metrics.avg_r_multiple = float(r_multiples.mean())
+        metrics.median_r_multiple = float(r_multiples.median())
+        metrics.expectancy_r = metrics.avg_r_multiple
+        metrics.avg_win_r = float(wins.mean()) if len(wins) else 0.0
+        metrics.avg_loss_r = float(losses.mean()) if len(losses) else 0.0
+        metrics.best_trade_r = float(r_multiples.max())
+        metrics.worst_trade_r = float(r_multiples.min())
+
+    def _apply_trade_r_drawdown(self, metrics: PerformanceMetrics, trades: List[Trade]) -> None:
+        """Populate R drawdown from a cumulative R curve grouped by exit time."""
+        rows = []
+        for trade in trades:
+            exit_time = getattr(trade, "exit_time", None)
+            r_multiple = getattr(trade, "r_multiple", None)
+            if r_multiple is None:
+                risk_amount = getattr(trade, "risk_amount", None)
+                pnl = getattr(trade, "pnl", None)
+                if risk_amount and pnl is not None:
+                    r_multiple = pnl / risk_amount
+            if exit_time is None or r_multiple is None:
+                continue
+            r_value = float(r_multiple)
+            if np.isfinite(r_value):
+                rows.append((pd.Timestamp(exit_time), r_value))
+        self._apply_r_drawdown_from_rows(metrics, rows)
+
+    def _apply_legacy_r_drawdown(
+        self,
+        metrics: PerformanceMetrics,
+        trade_log: pd.DataFrame,
+        r_multiples: pd.Series,
+    ) -> None:
+        """Populate R drawdown from a legacy trade log."""
+        if "exit_time" not in trade_log.columns or r_multiples is None or len(r_multiples) == 0:
+            return
+        values = pd.Series(r_multiples, dtype=float).replace([np.inf, -np.inf], np.nan).dropna()
+        if len(values) == 0:
+            return
+        rows = []
+        for idx, r_value in values.items():
+            try:
+                exit_time = pd.Timestamp(trade_log.loc[idx, "exit_time"])
+            except Exception:
+                continue
+            rows.append((exit_time, float(r_value)))
+        self._apply_r_drawdown_from_rows(metrics, rows)
+
+    def _apply_r_drawdown_from_rows(self, metrics: PerformanceMetrics, rows: List[Tuple[pd.Timestamp, float]]) -> None:
+        """Populate R drawdown from timestamped R-multiple rows."""
+        if not rows:
+            return
+        r_by_exit = pd.Series(
+            [r for _, r in rows],
+            index=pd.DatetimeIndex([ts for ts, _ in rows]),
+            dtype=float,
+        ).sort_index()
+        cumulative_r = r_by_exit.groupby(level=0).sum().cumsum()
+        running_peak = cumulative_r.cummax().clip(lower=0)
+        drawdown_r = cumulative_r - running_peak
+        if len(drawdown_r) == 0:
+            return
+        negative_drawdowns = drawdown_r[drawdown_r < 0]
+        metrics.max_drawdown_r = float(abs(drawdown_r.min()))
+        metrics.avg_drawdown_r = float(abs(negative_drawdowns.mean())) if len(negative_drawdowns) else 0.0
 
     def _max_drawdown_from_equity(self, equity: pd.Series) -> float:
         """Calculate maximum drawdown from equity curve.
@@ -467,8 +586,10 @@ class BacktestMetrics:
             "gross_loss": float(m.gross_loss),
             "max_drawdown": float(m.max_drawdown),
             "max_drawdown_pct": float(abs(m.max_drawdown) * 100),
+            "max_drawdown_r": float(m.max_drawdown_r),
             "max_drawdown_duration": int(m.max_drawdown_duration),
             "avg_drawdown": float(m.avg_drawdown),
+            "avg_drawdown_r": float(m.avg_drawdown_r),
             "recovery_factor": float(m.recovery_factor),
             "ulcer_index": float(m.ulcer_index),
             "win_rate": float(m.win_rate),
@@ -477,10 +598,17 @@ class BacktestMetrics:
             "avg_pnl": float(m.avg_pnl),
             "median_pnl": float(m.median_pnl),
             "expectancy": float(m.expectancy),
+            "expectancy_r": float(m.expectancy_r),
             "avg_trade_return": float(m.avg_trade_return),
             "median_trade_return": float(m.median_trade_return),
             "best_trade": float(m.best_trade),
             "worst_trade": float(m.worst_trade),
+            "avg_win_r": float(m.avg_win_r),
+            "avg_loss_r": float(m.avg_loss_r),
+            "avg_r_multiple": float(m.avg_r_multiple),
+            "median_r_multiple": float(m.median_r_multiple),
+            "best_trade_r": float(m.best_trade_r),
+            "worst_trade_r": float(m.worst_trade_r),
             "payoff_ratio": float(m.payoff_ratio),
             "trades_per_day": float(m.trades_per_day),
             "avg_holding_bars": int(m.avg_holding_bars),
@@ -520,12 +648,19 @@ class BacktestMetrics:
             f"    Win Rate:           {metrics.win_rate:.1%}",
             f"    Avg Win:            {metrics.avg_win:,.2f}",
             f"    Avg Loss:           {metrics.avg_loss:,.2f}",
+            f"    Avg Win (R):        {metrics.avg_win_r:.2f}",
+            f"    Avg Loss (R):       {metrics.avg_loss_r:.2f}",
+            f"    Avg R Multiple:     {metrics.avg_r_multiple:.2f}",
+            f"    Median R Multiple:  {metrics.median_r_multiple:.2f}",
             f"    Median PnL:         {metrics.median_pnl:,.2f}",
             f"    Best Trade:         {metrics.best_trade:,.2f}",
             f"    Worst Trade:        {metrics.worst_trade:,.2f}",
+            f"    Best Trade (R):     {metrics.best_trade_r:.2f}",
+            f"    Worst Trade (R):    {metrics.worst_trade_r:.2f}",
             f"    Profit Factor:      {metrics.profit_factor:.2f}",
             f"    Payoff Ratio:       {metrics.payoff_ratio:.2f}",
             f"    Expectancy:         {metrics.expectancy:,.2f}",
+            f"    Expectancy (R):     {metrics.expectancy_r:.2f}",
             f"    Avg Trade Return:   {metrics.avg_trade_return:.4%}",
             f"    Trades/Day:         {metrics.trades_per_day:.2f}",
             f"    Avg Holding Bars:   {metrics.avg_holding_bars}",
@@ -540,7 +675,9 @@ class BacktestMetrics:
             "",
             "  Drawdown Analysis:",
             f"    Max Drawdown:       {metrics.max_drawdown:.4%}",
+            f"    Max Drawdown (R):   {metrics.max_drawdown_r:.2f}R",
             f"    Avg Drawdown:       {metrics.avg_drawdown:.4%}",
+            f"    Avg Drawdown (R):   {metrics.avg_drawdown_r:.2f}R",
             f"    Max DD Duration:    {metrics.max_drawdown_duration} bars",
             f"    Recovery Factor:    {metrics.recovery_factor:.2f}",
             f"    Ulcer Index:        {metrics.ulcer_index:.6f}",

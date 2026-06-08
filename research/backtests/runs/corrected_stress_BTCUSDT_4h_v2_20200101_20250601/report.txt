@@ -1,0 +1,70 @@
+
+============================================================
+  BACKTEST PERFORMANCE REPORT
+============================================================
+
+Total Trades: 63 (Win Rate: 34.9%)
+Total Return: -14.4% | CAGR: -2.8%
+Sharpe: -2.01 | Sortino: -0.25 | Calmar: -0.17
+Max DD: -16.5251% | Profit Factor: 0.41
+Max DD (R): 17.92R | Avg R: -0.25R
+Avg PnL: -229.27 | Expectancy: -229.27 (-0.25R)
+Trades/Day: 0.03 | Exposure: 2.1%
+Max Consecutive Wins: 3 | Losses: 10
+Monthly Win Rate: 10/65 months profitable
+
+  Trade Statistics:
+    Total Trades:       63
+    Winning Trades:     22 (34.9%)
+    Losing Trades:      41
+    Win Rate:           34.9%
+    Avg Win:            447.52
+    Avg Loss:           -592.43
+    Avg Win (R):        0.48
+    Avg Loss (R):       -0.63
+    Avg R Multiple:     -0.25
+    Median R Multiple:  -0.17
+    Median PnL:         -156.76
+    Best Trade:         1,011.88
+    Worst Trade:        -1,022.42
+    Best Trade (R):     1.18
+    Worst Trade (R):    -1.00
+    Profit Factor:      0.41
+    Payoff Ratio:       0.76
+    Expectancy:         -229.27
+    Expectancy (R):     -0.25
+    Avg Trade Return:   -0.5026%
+    Trades/Day:         0.03
+    Avg Holding Bars:   3
+    Exposure:           2.1%
+
+  Performance Ratios:
+    Total Return:       -14.44%
+    CAGR:               -2.84%
+    Sharpe Ratio:       -2.01
+    Sortino Ratio:      -0.25
+    Calmar Ratio:       -0.17
+
+  Drawdown Analysis:
+    Max Drawdown:       -16.5251%
+    Max Drawdown (R):   17.92R
+    Avg Drawdown:       -4.8759%
+    Avg Drawdown (R):   9.59R
+    Max DD Duration:    5782 bars
+    Recovery Factor:    0.87
+    Ulcer Index:        0.076893
+
+  Risk Metrics:
+    VaR (95%):          0.0000%
+    CVaR (95%):         -0.0022%
+    Beta:               0.0007
+    Alpha:              -14.5746%
+
+  Execution Quality:
+    Total Fees:         4,727.87
+    Total Slippage:     4,718.15
+    Best Month:         1.78%
+    Worst Month:        -2.49%
+    Profitable Months:  10/65
+
+============================================================

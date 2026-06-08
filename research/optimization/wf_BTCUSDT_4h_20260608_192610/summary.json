@@ -1,0 +1,43 @@
+{
+  "aggregate": {
+    "max_consecutive_losses": 7,
+    "max_drawdown_pct": 8.847697582594497,
+    "max_drawdown_r": 9.211740875522107,
+    "mean_expectancy_r": 0.21541341127430705,
+    "mean_profit_factor": 1.7304055207564635,
+    "mean_return_pct": 1.3325073451986493,
+    "min_expectancy_r": -0.6479602477801809,
+    "min_profit_factor": 0.25358739775651107,
+    "min_return_pct": -7.55975464234913,
+    "positive_expectancy_windows": 10,
+    "profitable_windows": 10,
+    "total_trades": 171,
+    "windows": 17
+  },
+  "costs": {
+    "exit_on_flat_signal": false,
+    "exit_on_opposite_signal": true,
+    "fee_rate": 0.001,
+    "max_position_pct": 1.0,
+    "sizing_mode": "risk_based",
+    "slippage_rate": 0.002
+  },
+  "params": {
+    "allow_long": true,
+    "allow_short": true,
+    "atr_stop_mult": 2.623331473171495,
+    "atr_tp_mult": 13.47870015122297,
+    "donchian_lookback": 8,
+    "max_holding_bars": 120,
+    "min_holding_bars": 3,
+    "trend_sma_period": 50,
+    "use_trend_filter": true,
+    "volatility_max": 0.08,
+    "volatility_min": 0.0,
+    "volume_lookback": 150,
+    "volume_mult": 1.3229217634769994
+  },
+  "params_file": "research/optimization/v3_wf_edge_BTCUSDT_4h_20260608_192533/best_summary.json",
+  "symbol": "BTCUSDT",
+  "timeframe": "4h"
+}

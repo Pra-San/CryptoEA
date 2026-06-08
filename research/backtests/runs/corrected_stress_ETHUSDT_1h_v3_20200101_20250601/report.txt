@@ -1,0 +1,70 @@
+
+============================================================
+  BACKTEST PERFORMANCE REPORT
+============================================================
+
+Total Trades: 1299 (Win Rate: 32.3%)
+Total Return: -4.4% | CAGR: -0.8%
+Sharpe: -3.13 | Sortino: -1.05 | Calmar: -0.19
+Max DD: -4.4820% | Profit Factor: 0.54
+Max DD (R): 263.80R | Avg R: -0.20R
+Avg PnL: -3.41 | Expectancy: -3.41 (-0.20R)
+Trades/Day: 0.66 | Exposure: 7.6%
+Max Consecutive Wins: 5 | Losses: 19
+Monthly Win Rate: 10/65 months profitable
+
+  Trade Statistics:
+    Total Trades:       1299
+    Winning Trades:     419 (32.3%)
+    Losing Trades:      880
+    Win Rate:           32.3%
+    Avg Win:            12.48
+    Avg Loss:           -10.98
+    Avg Win (R):        0.68
+    Avg Loss (R):       -0.62
+    Avg R Multiple:     -0.20
+    Median R Multiple:  -0.33
+    Median PnL:         -5.53
+    Best Trade:         55.30
+    Worst Trade:        -34.18
+    Best Trade (R):     1.66
+    Worst Trade (R):    -1.00
+    Profit Factor:      0.54
+    Payoff Ratio:       1.14
+    Expectancy:         -3.41
+    Expectancy (R):     -0.20
+    Avg Trade Return:   -0.3492%
+    Trades/Day:         0.66
+    Avg Holding Bars:   2
+    Exposure:           7.6%
+
+  Performance Ratios:
+    Total Return:       -4.44%
+    CAGR:               -0.83%
+    Sharpe Ratio:       -3.13
+    Sortino Ratio:      -1.05
+    Calmar Ratio:       -0.19
+
+  Drawdown Analysis:
+    Max Drawdown:       -4.4820%
+    Max Drawdown (R):   263.80R
+    Avg Drawdown:       -1.8628%
+    Avg Drawdown (R):   110.98R
+    Max DD Duration:    44831 bars
+    Recovery Factor:    0.99
+    Ulcer Index:        0.023203
+
+  Risk Metrics:
+    VaR (95%):          0.0000%
+    CVaR (95%):         -0.0002%
+    Beta:               -0.0000
+    Alpha:              -4.4340%
+
+  Execution Quality:
+    Total Fees:         2,548.16
+    Total Slippage:     2,548.58
+    Best Month:         0.09%
+    Worst Month:        -0.20%
+    Profitable Months:  10/65
+
+============================================================
