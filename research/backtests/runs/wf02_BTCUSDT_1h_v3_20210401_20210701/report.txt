@@ -1,0 +1,60 @@
+
+============================================================
+  BACKTEST PERFORMANCE REPORT
+============================================================
+
+Total Trades: 45 (Win Rate: 88.9%)
+Total Return: 0.8% | CAGR: 3.1%
+Sharpe: 7.59 | Sortino: 5.89 | Calmar: 320.57
+Max DD: -0.0098% | Profit Factor: 33.87
+Avg PnL: 19.46 | Expectancy: 19.46
+Trades/Day: 0.50 | Exposure: 8.0%
+Max Consecutive Wins: 28 | Losses: 2
+Monthly Win Rate: 2/3 months profitable
+
+  Trade Statistics:
+    Total Trades:       45
+    Winning Trades:     40 (88.9%)
+    Losing Trades:      5
+    Win Rate:           88.9%
+    Avg Win:            22.55
+    Avg Loss:           -5.33
+    Median PnL:         17.06
+    Best Trade:         83.87
+    Worst Trade:        -9.88
+    Profit Factor:      33.87
+    Payoff Ratio:       4.23
+    Expectancy:         19.46
+    Avg Trade Return:   1.9376%
+    Trades/Day:         0.50
+    Avg Holding Bars:   3
+    Exposure:           8.0%
+
+  Performance Ratios:
+    Total Return:       0.77%
+    CAGR:               3.15%
+    Sharpe Ratio:       7.59
+    Sortino Ratio:      5.89
+    Calmar Ratio:       320.57
+
+  Drawdown Analysis:
+    Max Drawdown:       -0.0098%
+    Avg Drawdown:       -0.0006%
+    Max DD Duration:    197 bars
+    Recovery Factor:    78.07
+    Ulcer Index:        0.000020
+
+  Risk Metrics:
+    VaR (95%):          0.0000%
+    CVaR (95%):         -0.0000%
+    Beta:               -0.0001
+    Alpha:              0.7564%
+
+  Execution Quality:
+    Total Fees:         54.18
+    Total Slippage:     0.00
+    Best Month:         0.40%
+    Worst Month:        0.00%
+    Profitable Months:  2/3
+
+============================================================

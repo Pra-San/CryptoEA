@@ -828,7 +828,7 @@ def save_run_artifacts(
         "engine_config": asdict(result["config"]),
         "command": [Path(sys.argv[0]).name, *sys.argv[1:]],
         "git_sha": _git_sha(),
-        "created_at": pd.Timestamp.utcnow().isoformat(),
+        "created_at": pd.Timestamp.now(tz="UTC").isoformat(),
         "period": {
             "start": str(data.index[0]) if len(data) else None,
             "end": str(data.index[-1]) if len(data) else None,
