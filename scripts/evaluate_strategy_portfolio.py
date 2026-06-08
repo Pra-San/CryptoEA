@@ -30,6 +30,8 @@ from backtest.metrics import BacktestMetrics
 from data.loader import DataLoader
 from scripts.explore_strategy_families import PARAM_FIELDS as FAMILY_PARAM_FIELDS
 from scripts.explore_strategy_families import apply_strategy
+from scripts.explore_state_trend_following import PARAM_FIELDS as STATE_PARAM_FIELDS
+from scripts.explore_state_trend_following import apply_strategy as apply_state_strategy
 from scripts.explore_v3_edge import PARAM_FIELDS as V3_PARAM_FIELDS
 from scripts.explore_v3_edge import make_strategy as make_v3_strategy
 from scripts.run_backtest import (
@@ -77,8 +79,13 @@ def load_candidate(path: Path) -> Candidate:
     best = data["best"]
     symbol = data["symbol"]
     timeframe = data["timeframe"]
+    strategy = data.get("strategy")
     family = best.get("family")
-    if family:
+    if strategy == "state_trend_following":
+        params = {field: best[field] for field in STATE_PARAM_FIELDS}
+        params["exit_on_flat_signal"] = True
+        kind = f"state_trend:{family}"
+    elif family:
         params = {field: best[field] for field in FAMILY_PARAM_FIELDS}
         kind = f"family:{family}"
     else:
@@ -130,6 +137,8 @@ def load_base_data(
 
 
 def apply_candidate_strategy(base: pd.DataFrame, candidate: Candidate, risk_per_trade: float) -> pd.DataFrame:
+    if candidate.kind.startswith("state_trend:"):
+        return apply_state_strategy(base, candidate.params)
     if candidate.kind.startswith("family:"):
         return apply_strategy(base, candidate.params)
     strategy = make_v3_strategy(candidate.symbol, candidate.timeframe, risk_per_trade, candidate.params)
@@ -159,7 +168,7 @@ def run_candidate(
         sizing_mode=sizing_mode,
         min_holding_bars=min_hold,
         max_holding_bars=max_hold,
-        exit_on_flat_signal=False,
+        exit_on_flat_signal=bool(candidate.params.get("exit_on_flat_signal", False)),
         exit_on_opposite_signal=True,
     )
     return VectorizedBacktestEngine(featured, config, candidate.symbol).run()

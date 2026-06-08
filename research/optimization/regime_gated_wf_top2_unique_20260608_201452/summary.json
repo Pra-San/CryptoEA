@@ -1,0 +1,429 @@
+{
+  "aggregate": {
+    "max_consecutive_losses": 6,
+    "max_drawdown_pct": 2.8726690116139415,
+    "max_drawdown_r": 2.873336069928106,
+    "mean_expectancy_r": 0.013040960522050067,
+    "mean_profit_factor": 1.6174885070537388,
+    "mean_return_pct": 0.6574564112787399,
+    "min_expectancy_r": -0.5,
+    "min_profit_factor": 0.0,
+    "min_return_pct": -2.4800500000000025,
+    "positive_expectancy_windows": 8,
+    "profitable_windows": 8,
+    "total_trades": 102,
+    "trade_weighted_expectancy_r": 0.11017047237928974,
+    "weighted_avg_holding_bars": 16.235294117647058,
+    "weighted_avg_loss_r": -0.44536834369068645,
+    "weighted_avg_win_r": 1.0715945437559473,
+    "weighted_payoff_ratio": 2.422133193297916,
+    "weighted_trades_per_day": 0.09355859400616434,
+    "windows": 17
+  },
+  "candidate_count": 21,
+  "candidates": [
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_edge_BTCUSDT_12h_20260608_194342",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_12h_20260608_194342/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "12h"
+    },
+    {
+      "kind": "family:ema_momentum",
+      "label": "family_edge_BTCUSDT_1h_20260608_194104",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_1h_20260608_194104/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h"
+    },
+    {
+      "kind": "family:squeeze_breakout",
+      "label": "family_edge_BTCUSDT_4h_20260608_193935",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_4h_20260608_193935/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_edge_BTCUSDT_4h_20260608_194014",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_4h_20260608_194014/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:squeeze_breakout",
+      "label": "family_edge_ETHUSDT_4h_20260608_194104",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_ETHUSDT_4h_20260608_194104/best_summary.json",
+      "symbol": "ETHUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:squeeze_breakout",
+      "label": "family_edge_SOLUSDT_4h_20260608_194104",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_SOLUSDT_4h_20260608_194104/best_summary.json",
+      "symbol": "SOLUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_wf_edge_BTCUSDT_12h_20260608_194342",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_wf_edge_BTCUSDT_12h_20260608_194342/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "12h"
+    },
+    {
+      "kind": "family:ema_momentum",
+      "label": "family_wf_edge_BTCUSDT_4h_20260608_194317",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_wf_edge_BTCUSDT_4h_20260608_194317/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_wf_edge_SOLUSDT_4h_20260608_194416",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_wf_edge_SOLUSDT_4h_20260608_194416/best_summary.json",
+      "symbol": "SOLUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_1d_20260608_192634",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_1d_20260608_192634/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_1h_20260608_191157",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_1h_20260608_191157/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_1h_20260608_191205",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_1h_20260608_191205/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191322",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191322/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191403",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191403/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191650",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191650/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191932",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191932/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_192109",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_192109/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_ETHUSDT_4h_20260608_191748",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_ETHUSDT_4h_20260608_191748/best_summary.json",
+      "symbol": "ETHUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_SOLUSDT_4h_20260608_191748",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_SOLUSDT_4h_20260608_191748/best_summary.json",
+      "symbol": "SOLUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_wf_edge_BTCUSDT_1d_20260608_192634",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_wf_edge_BTCUSDT_1d_20260608_192634/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_wf_edge_BTCUSDT_4h_20260608_192533",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_wf_edge_BTCUSDT_4h_20260608_192533/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    }
+  ],
+  "costs": {
+    "fee_rate": 0.001,
+    "max_position_pct": 1.0,
+    "risk_per_trade": 0.01,
+    "sizing_mode": "risk_based",
+    "slippage_rate": 0.002
+  },
+  "period": {
+    "end": "2025-06-01",
+    "min_train_trades": 10,
+    "start": "2020-01-01",
+    "test_months": 3,
+    "train_months": 12
+  },
+  "regime_grid": "compact",
+  "regimes": [
+    {
+      "mode": "none",
+      "name": "none",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "trend_aligned",
+      "name": "trend_aligned_sma100_roc14_min0",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "long_bull",
+      "name": "long_bull_sma100_roc14_min0",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "short_bear",
+      "name": "short_bear_sma100_roc14_min0",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "trend_aligned",
+      "name": "trend_aligned_sma100_roc30_min0",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "long_bull",
+      "name": "long_bull_sma100_roc30_min0",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "short_bear",
+      "name": "short_bear_sma100_roc30_min0",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "trend_aligned",
+      "name": "trend_aligned_sma200_roc14_min0",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "long_bull",
+      "name": "long_bull_sma200_roc14_min0",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "short_bear",
+      "name": "short_bear_sma200_roc14_min0",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "trend_aligned",
+      "name": "trend_aligned_sma200_roc30_min0",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "long_bull",
+      "name": "long_bull_sma200_roc30_min0",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "short_bear",
+      "name": "short_bear_sma200_roc30_min0",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "low_vol",
+      "name": "low_vol_q50",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.5
+    },
+    {
+      "mode": "high_vol",
+      "name": "high_vol_q50",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.5
+    },
+    {
+      "mode": "low_vol",
+      "name": "low_vol_q70",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "high_vol",
+      "name": "high_vol_q70",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "low_vol",
+      "name": "low_vol_q85",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.85
+    },
+    {
+      "mode": "high_vol",
+      "name": "high_vol_q85",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.85
+    },
+    {
+      "mode": "long_bull_low_vol",
+      "name": "long_bull_low_vol_sma100",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "short_bear_high_vol",
+      "name": "short_bear_high_vol_sma100",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 100,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "long_bull_low_vol",
+      "name": "long_bull_low_vol_sma200",
+      "roc_days": 30,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    },
+    {
+      "mode": "short_bear_high_vol",
+      "name": "short_bear_high_vol_sma200",
+      "roc_days": 14,
+      "roc_min": 0.0,
+      "sma": 200,
+      "vol_lookback": 120,
+      "vol_quantile": 0.7
+    }
+  ],
+  "selection_counts": {
+    "family_edge_BTCUSDT_12h_20260608_194342__none": 4,
+    "family_edge_BTCUSDT_1h_20260608_194104__high_vol_q50": 1,
+    "family_edge_BTCUSDT_1h_20260608_194104__trend_aligned_sma200_roc14_min0": 1,
+    "family_edge_BTCUSDT_1h_20260608_194104__trend_aligned_sma200_roc30_min0": 1,
+    "family_edge_ETHUSDT_4h_20260608_194104__long_bull_low_vol_sma100": 1,
+    "family_edge_ETHUSDT_4h_20260608_194104__long_bull_sma100_roc14_min0": 4,
+    "family_edge_ETHUSDT_4h_20260608_194104__short_bear_sma200_roc30_min0": 1,
+    "family_wf_edge_SOLUSDT_4h_20260608_194416__long_bull_sma100_roc30_min0": 1,
+    "v3_edge_BTCUSDT_4h_20260608_191403__short_bear_sma200_roc14_min0": 1,
+    "v3_edge_BTCUSDT_4h_20260608_191403__short_bear_sma200_roc30_min0": 1,
+    "v3_edge_BTCUSDT_4h_20260608_191403__trend_aligned_sma200_roc14_min0": 1,
+    "v3_edge_BTCUSDT_4h_20260608_191650__low_vol_q70": 1,
+    "v3_edge_BTCUSDT_4h_20260608_192109__long_bull_low_vol_sma100": 1,
+    "v3_edge_BTCUSDT_4h_20260608_192109__long_bull_low_vol_sma200": 1,
+    "v3_edge_ETHUSDT_4h_20260608_191748__long_bull_low_vol_sma100": 3,
+    "v3_edge_ETHUSDT_4h_20260608_191748__long_bull_sma100_roc14_min0": 1,
+    "v3_edge_ETHUSDT_4h_20260608_191748__short_bear_sma200_roc30_min0": 1,
+    "v3_edge_SOLUSDT_4h_20260608_191748__long_bull_sma100_roc14_min0": 1,
+    "v3_edge_SOLUSDT_4h_20260608_191748__short_bear_sma100_roc14_min0": 1,
+    "v3_edge_SOLUSDT_4h_20260608_191748__trend_aligned_sma100_roc14_min0": 2,
+    "v3_edge_SOLUSDT_4h_20260608_191748__trend_aligned_sma200_roc30_min0": 1,
+    "v3_wf_edge_BTCUSDT_4h_20260608_192533__long_bull_sma100_roc30_min0": 2,
+    "v3_wf_edge_BTCUSDT_4h_20260608_192533__trend_aligned_sma100_roc14_min0": 1,
+    "v3_wf_edge_BTCUSDT_4h_20260608_192533__trend_aligned_sma200_roc14_min0": 1
+  },
+  "strategy": "regime_gated_adaptive_selector",
+  "symbol": "REGIME_GATED_PORTFOLIO",
+  "timeframe": "mixed",
+  "top_k": 2,
+  "unique_symbols": true,
+  "variant_count": 483
+}

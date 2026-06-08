@@ -80,6 +80,7 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
     portfolio_metrics = data.get("portfolio_metrics", {})
     is_portfolio = bool(portfolio_metrics)
     is_adaptive = data.get("strategy") == "adaptive_candidate_selector"
+    is_regime_gated = data.get("strategy") == "regime_gated_adaptive_selector"
     run_dir = path.parent
     return {
         "run_dir": run_dir.name,
@@ -88,7 +89,9 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
         "symbol": data.get("symbol"),
         "timeframe": data.get("timeframe"),
         "family": (
-            "adaptive_portfolio"
+            "regime_gated_portfolio"
+            if is_regime_gated
+            else "adaptive_portfolio"
             if is_adaptive
             else "portfolio"
             if is_portfolio

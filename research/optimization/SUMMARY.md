@@ -131,3 +131,50 @@ All runs below use 10 bps commission, 20 bps adverse execution stress, 1% accoun
 Adaptive selection did not create a deployable edge. The best variant by mean expectancy was top-2 unrestricted selection, but its average edge was effectively zero and only 8 of 17 out-of-sample windows were positive. The unique-symbol constraint reduced concentration risk but did not improve expectancy.
 
 Conclusion remains unchanged: this OHLCV-only candidate universe does not currently contain an edge strong enough for live deployment after realistic costs, spreads/slippage stress, R drawdown accounting, and walk-forward testing.
+
+## Fifth-Pass Regime-Gated Candidate Selection
+
+A BTC daily regime-gating evaluator was added after adaptive candidate selection failed. It expands each saved candidate with causal BTC trend and volatility gates, shifts daily regime features by one completed day to avoid lookahead, ranks variants only on the prior 12-month training window, and evaluates the selected variants on the next 3-month window.
+
+All runs below use 10 bps commission, 20 bps adverse execution stress, 1% account risk per trade, and report drawdown in R.
+
+| Regime-Gated Run | Positive Exp Windows | Mean Exp R | Trade-Weighted Exp R | Max DD R | Trades |
+|---|---:|---:|---:|---:|---:|
+| Top 2 variants | 7 / 17 | 0.056 | 0.107 | 6.87 | 99 |
+| Top 2, unique symbols | 8 / 17 | 0.013 | 0.110 | 2.87 | 102 |
+| Top 2, unique base candidates | 7 / 17 | -0.060 | 0.034 | 7.18 | 113 |
+| Top 1 variant | 5 / 17 | 0.103 | 0.288 | 5.75 | 50 |
+| Top 2, min 20 train trades | 7 / 17 | -0.004 | 0.011 | 6.87 | 219 |
+
+Regime gating improved some individual windows, but the result is not deployable. The positive-window rate stayed weak, top-1 was too sparse, and stricter selection constraints did not improve robustness.
+
+## Sixth-Pass State Trend Following
+
+A state-based trend-following family was added because the prior searches only used trend as an entry event. These strategies stay long or short while a moving-average trend state remains active and use `exit_on_flat_signal=True`, so the backtest exits when the state breaks. This produced the strongest research lead so far, but the honest train-only result remains below deployment quality.
+
+Validation-selected state portfolio, BTCUSDT 12h + ETHUSDT 4h + SOLUSDT 4h:
+
+- Validation PF: 3.07
+- Validation expectancy: 0.358R
+- Validation max drawdown: 3.38R / 3.41%
+- Average win / loss: 2.04R / -0.21R
+- Average RR: 9.04
+- Trades/day: 0.130
+- Average holding time: 46 bars
+- Fixed WF: 10 / 17 positive windows, mean 0.568R, max drawdown 4.89R
+- Severe 50 bps slippage stress: validation PF 2.52, expectancy 0.275R, max drawdown 3.71R, fixed WF 9 / 17
+
+However, that portfolio is selected using holdout validation, so it is diagnostic only. The honest train-WF-selected version is materially weaker:
+
+- Validation PF: 1.83
+- Validation expectancy: 0.104R
+- Validation max drawdown: 3.06R / 3.07%
+- Average win / loss: 0.88R / -0.16R
+- Average RR: 5.41
+- Max consecutive losses: 10
+- Trades/day: 0.153
+- Average holding time: 38 bars
+- Fixed WF: 10 / 17 positive windows, mean 0.273R, trade-weighted 0.241R, max drawdown 3.45R
+- Severe 50 bps slippage stress: validation PF 1.51, expectancy 0.069R, max drawdown 3.65R, fixed WF 9 / 17
+
+State trend following is the strongest direction found so far, but it is still not ready for live deployment. The honest edge is small after costs, the positive-window rate is only 10 / 17, and the loss streak is too long for immediate capital deployment. The next research step should focus on improving state-trend robustness with predeclared selection rules, not selecting by validation performance.
