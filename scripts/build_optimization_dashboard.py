@@ -77,6 +77,8 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
     data = load_json(path)
     aggregate = data.get("aggregate", {})
     costs = data.get("costs", {})
+    portfolio_metrics = data.get("portfolio_metrics", {})
+    is_portfolio = bool(portfolio_metrics)
     run_dir = path.parent
     return {
         "run_dir": run_dir.name,
@@ -84,7 +86,7 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
         "summary_file": str(path.relative_to(OPT_ROOT)),
         "symbol": data.get("symbol"),
         "timeframe": data.get("timeframe"),
-        "family": data.get("params", {}).get("family", "v3"),
+        "family": "portfolio" if is_portfolio else data.get("params", {}).get("family", "v3"),
         "trial": None,
         "trials": None,
         "seed": None,
@@ -100,19 +102,19 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
         "wf_min_exp_r": aggregate.get("min_expectancy_r"),
         "wf_max_dd_r": aggregate.get("max_drawdown_r"),
         "wf_total_trades": aggregate.get("total_trades"),
-        "validation_trades": None,
-        "validation_pf": None,
-        "validation_exp_r": None,
-        "validation_dd_r": None,
-        "validation_dd_pct": None,
-        "validation_return_pct": None,
+        "validation_trades": portfolio_metrics.get("total_trades"),
+        "validation_pf": portfolio_metrics.get("profit_factor"),
+        "validation_exp_r": portfolio_metrics.get("expectancy_r"),
+        "validation_dd_r": portfolio_metrics.get("max_drawdown_r"),
+        "validation_dd_pct": portfolio_metrics.get("max_drawdown_pct"),
+        "validation_return_pct": portfolio_metrics.get("total_return_pct"),
         "stress_trades": None,
         "stress_pf": None,
         "stress_exp_r": None,
         "stress_dd_r": None,
         "stress_dd_pct": None,
         "stress_return_pct": None,
-        "best_params": json.dumps(data.get("params", {}), sort_keys=True),
+        "best_params": json.dumps(data.get("params", data.get("candidates", {})), sort_keys=True),
     }
 
 

@@ -98,3 +98,18 @@ Optimization dashboard:
 - `research/optimization/optimization_index.csv`
 
 Conclusion remains unchanged: no candidate found so far is live-deployment worthy under corrected execution, Binance-style commissions, 20 bps adverse execution stress, and walk-forward validation.
+
+## Third-Pass Portfolio Evaluation
+
+Portfolio-level testing was added after the single-symbol family search. The evaluator scales each saved candidate into an equal-weight sleeve and scales per-trade R by sleeve weight, so portfolio drawdown in R reflects account-level risk contribution.
+
+Representative stressed portfolio results:
+
+| Portfolio | Validation PF | Validation Exp R | Validation DD R | Trades | WF Positive Windows | WF Mean Exp R |
+|---|---:|---:|---:|---:|---:|---:|
+| BTC/ETH/SOL family candidates | 1.50 | 0.085 | 4.40 | 111 | 7 / 17 | 0.019 |
+| BTC/ETH/SOL v3 candidates | 1.26 | 0.051 | 3.49 | 248 | 12 / 17 | 0.038 |
+| BTC v3 + SOL family | 1.29 | 0.103 | 4.32 | 125 | 10 / 17 | 0.032 |
+| BTC family + SOL family | 1.72 | 0.114 | 3.08 | 70 | 9 / 17 | 0.011 |
+
+Portfolio diversification reduced R drawdowns in some cases, but it did not produce enough expectancy. The best window count was the BTC/ETH/SOL v3 portfolio at 12 / 17 positive-expectancy windows, but mean expectancy was only 0.038R. This is still too weak for live deployment.
