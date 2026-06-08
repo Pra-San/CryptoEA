@@ -178,3 +178,41 @@ However, that portfolio is selected using holdout validation, so it is diagnosti
 - Severe 50 bps slippage stress: validation PF 1.51, expectancy 0.069R, max drawdown 3.65R, fixed WF 9 / 17
 
 State trend following is the strongest direction found so far, but it is still not ready for live deployment. The honest edge is small after costs, the positive-window rate is only 10 / 17, and the loss streak is too long for immediate capital deployment. The next research step should focus on improving state-trend robustness with predeclared selection rules, not selecting by validation performance.
+
+## Seventh-Pass High-Winrate Partial/Trailing Search
+
+The original high-winrate target was tested with corrected next-bar execution, no overlapping positions, Binance-style fees, spread/slippage stress, average win/loss, payoff ratio, expectancy, holding time, and drawdown in both percent and R. Plain high-winrate and trailing-only variants did not pass stress gates under the harsh 20 bps normal / 50 bps stress slippage model.
+
+Partial exits were then added: first partial take-profit, stop movement after partial, breakeven logic, and ATR trailing. This is the first variant class that produced a credible realistic-cost lead.
+
+Best single-symbol candidate found so far:
+
+| Candidate | Cost Tier | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week | Avg Hold |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| SOLUSDT 1h partial/trailing trend-state | 10 bps fee + 2 bps slippage | 250 | 65.6% | 3.90 | 3.14 | 0.379 | 0.856 | -0.532 | 1.64 | 5.02 | 4.92% | 4 | 3.38 | 8 bars |
+| SOLUSDT 1h partial/trailing trend-state | 10 bps fee + 10 bps stress slippage | 250 | 64.4% | 3.35 | 2.55 | 0.290 | 0.751 | -0.543 | 1.41 | 5.53 | 5.40% | 4 | 3.38 | 8 bars |
+| SOLUSDT 1h partial/trailing trend-state | 10 bps fee + 50 bps shock slippage | 252 | 52.0% | 0.00 | 0.99 | 0.000 | 0.495 | -0.536 | 0.92 | 7.73 | 7.75% | 6 | 3.41 | 8 bars |
+
+Walk-forward profile for the same fixed SOLUSDT 1h parameters:
+
+- 17 / 17 three-month windows had positive expectancy.
+- 10 / 17 passed a strict three-month gate using at least 10 trades, win rate >= 60%, PF >= 2.5, expectancy >= 0.15R, max drawdown <= 8R, and at least 0.5 trades/week.
+- 2024-2025 stressed validation passed the deployment-style gate, but the 50 bps shock test failed completely.
+
+This is a real candidate, not a finished deployment. It is much better than prior OHLCV-only variants, but it is not comparable to the originally claimed PF 9-26 / Sharpe 6-8 table after execution costs and shock testing.
+
+## Eighth-Pass Adaptive Partial Portfolio
+
+An adaptive selector for partial/trailing candidates was added. It ranks candidates using only the preceding training window and then evaluates the selected candidates on the next unseen three-month window. The exact evaluator now supports two risk modes:
+
+- `equal_sleeve`: each selected strategy is scaled to an equal portfolio sleeve; R drawdown is account-level.
+- `full_strategy`: each selected strategy keeps its own full 1% risk budget; this matches single-strategy R scale but allows higher portfolio risk.
+
+Best exact top-3 unique-symbol adaptive portfolio at 10 bps fee + 10 bps stress slippage:
+
+| Risk Mode | Positive Windows | Gate Windows | Mean Exp R | Max DD R | Trades | Notes |
+|---|---:|---:|---:|---:|---:|---|
+| Equal sleeve | 16 / 17 | 0 / 17 | 0.061 | 2.69 | 1,406 | Low drawdown, but account-level R expectancy is diluted by sleeve scaling. |
+| Full strategy | 16 / 17 | 7 / 17 | 0.184 | 8.06 | 1,406 | Better table-style R, but drawdown is too high and PF consistency is not deployable. |
+
+Conclusion: the best current direction is the SOLUSDT 1h partial/trailing trend-state candidate plus adaptive portfolio research. The SOL candidate can be tagged as a research candidate for paper trading, but not as a deployable production strategy until it survives forward paper trading and additional predeclared walk-forward/regime tests.

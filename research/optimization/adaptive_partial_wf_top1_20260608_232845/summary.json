@@ -1,0 +1,29 @@
+{
+  "aggregate": {
+    "gate_windows": 2,
+    "max_consecutive_losses": 4,
+    "max_drawdown_pct": 4.1515786253052465,
+    "max_drawdown_r": 4.198246414527151,
+    "mean_expectancy_r": 0.17677521125501322,
+    "mean_win_rate": 0.6485246779364426,
+    "positive_expectancy_windows": 14,
+    "total_trades": 276,
+    "trade_weighted_expectancy_r": 0.20221828777200043,
+    "weighted_avg_loss_r": -0.66733057183745,
+    "weighted_avg_win_r": 0.6587966648706833,
+    "weighted_payoff_ratio": 1.0312229358800624,
+    "weighted_trades_per_week": 1.6613735263546228,
+    "windows": 17
+  },
+  "candidate_count": 320,
+  "costs": {
+    "fee_rate": 0.001,
+    "max_position_pct": 1.0,
+    "risk_per_trade": 0.01,
+    "slippage_rate": 0.001
+  },
+  "strategy": "adaptive_partial_trailing_selector",
+  "symbol": "ADAPTIVE_PARTIAL",
+  "timeframe": "mixed",
+  "top_k": 1
+}
