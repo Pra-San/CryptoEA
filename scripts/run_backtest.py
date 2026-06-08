@@ -15,10 +15,13 @@ Usage:
 """
 
 import argparse
+import json
 import logging
+import platform
+import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -35,6 +38,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from data.loader import DataLoader
 from data.preprocessor import DataPreprocessor, PreprocessingConfig
 from backtest.metrics import BacktestMetrics, PerformanceMetrics
+from utils.helpers import get_binance_data_path
 
 logger = logging.getLogger("backtest_pipeline")
 
@@ -496,7 +500,7 @@ class VectorizedBacktestEngine:
             net_pnl = gross_pnl - entry_fee - exit_fee
             pnl_pct = net_pnl / position_notional if position_notional > 0 else 0
 
-            balance += gross_pnl - exit_fee
+            balance += net_pnl
 
             trades.append({
                 "entry_time": entry_time,
@@ -569,7 +573,9 @@ class VectorizedBacktestEngine:
             if signals[i] == 0 and i > entry_idx + min_hold:
                 return i
 
-        return None  # Hit max holding bars, exit at last close
+        if search_end <= entry_idx + min_hold:
+            return None
+        return search_end - 1  # Exit at max holding horizon
 
     def _build_equity_curve(self, trades: List[Dict], timestamps: pd.DatetimeIndex,
                             closes: np.ndarray) -> List[float]:
@@ -723,6 +729,151 @@ def plot_backtest(result: Dict, data: pd.DataFrame, save_path: Optional[str] = N
 
 
 # ====================================================================
+# ARTIFACTS
+# ====================================================================
+
+def _git_sha() -> str:
+    """Return the current git SHA when available."""
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return completed.stdout.strip()
+    except Exception:
+        return "unknown"
+
+
+def _json_safe(value):
+    """Convert pandas/numpy values into JSON-safe Python objects."""
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, (pd.Timestamp,)):
+        return value.isoformat()
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (np.floating,)):
+        value = float(value)
+    if isinstance(value, float):
+        if np.isnan(value):
+            return None
+        if np.isinf(value):
+            return "Infinity" if value > 0 else "-Infinity"
+        return value
+    return value
+
+
+def _run_id(args: argparse.Namespace, strategy) -> str:
+    """Create a deterministic-ish run id unless one is supplied."""
+    if getattr(args, "run_id", None):
+        return args.run_id
+
+    started = time.strftime("%Y%m%d_%H%M%S")
+    start = (args.start or "full").replace("-", "")
+    end = (args.end or "full").replace("-", "")
+    return f"{args.symbol}_{args.timeframe}_{strategy.get_version()}_{start}_{end}_{started}"
+
+
+def save_run_artifacts(
+    args: argparse.Namespace,
+    result: Dict,
+    metrics: PerformanceMetrics,
+    metrics_dict: Dict,
+    strategy,
+    data: pd.DataFrame,
+    report_text: str,
+) -> Path:
+    """Persist a reproducible run bundle for dashboards and audits."""
+    output_root = Path(getattr(args, "output_dir", PROJECT_ROOT / "research" / "backtests"))
+    if not output_root.is_absolute():
+        output_root = PROJECT_ROOT / output_root
+
+    run_id = _run_id(args, strategy)
+    run_dir = output_root / "runs" / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    trades_df = pd.DataFrame(result["trades"])
+    equity_df = result["equity_curve"].rename("equity").reset_index()
+    equity_df.columns = ["timestamp", "equity"]
+    benchmark_df = result["benchmark_curve"].rename("benchmark").reset_index()
+    benchmark_df.columns = ["timestamp", "benchmark"]
+
+    trades_file = run_dir / "trades.csv"
+    equity_file = run_dir / "equity.csv"
+    benchmark_file = run_dir / "benchmark.csv"
+    report_file = run_dir / "report.txt"
+    summary_file = run_dir / "summary.json"
+
+    trades_df.to_csv(trades_file, index=False)
+    equity_df.to_csv(equity_file, index=False)
+    benchmark_df.to_csv(benchmark_file, index=False)
+    report_file.write_text(report_text)
+
+    source_path = get_binance_data_path(args.symbol, "1m")
+    source_stat = source_path.stat() if source_path.exists() else None
+
+    summary = {
+        "run_id": run_id,
+        "validation_mode": getattr(args, "validation_mode", "full_period"),
+        "symbol": args.symbol,
+        "timeframe": args.timeframe,
+        "strategy": strategy.get_name(),
+        "strategy_version": strategy.get_version(),
+        "strategy_config": asdict(strategy.config),
+        "engine_config": asdict(result["config"]),
+        "command": [Path(sys.argv[0]).name, *sys.argv[1:]],
+        "git_sha": _git_sha(),
+        "created_at": pd.Timestamp.utcnow().isoformat(),
+        "period": {
+            "start": str(data.index[0]) if len(data) else None,
+            "end": str(data.index[-1]) if len(data) else None,
+            "requested_start": args.start,
+            "requested_end": args.end,
+            "train_start": getattr(args, "train_start", None),
+            "train_end": getattr(args, "train_end", None),
+            "test_start": getattr(args, "test_start", None),
+            "test_end": getattr(args, "test_end", None),
+        },
+        "data": {
+            "bars": int(len(data)),
+            "source_path": str(source_path),
+            "source_size_bytes": int(source_stat.st_size) if source_stat else None,
+            "source_mtime": pd.Timestamp(source_stat.st_mtime, unit="s", tz="UTC").isoformat()
+            if source_stat
+            else None,
+            "first_close": float(data["close"].iloc[0]) if len(data) else None,
+            "last_close": float(data["close"].iloc[-1]) if len(data) else None,
+        },
+        "environment": {
+            "python": platform.python_version(),
+            "pandas": pd.__version__,
+            "numpy": np.__version__,
+        },
+        "metrics": metrics_dict,
+        "metadata": result["metadata"],
+        "artifacts": {
+            "trades_csv": str(trades_file.relative_to(output_root)),
+            "equity_csv": str(equity_file.relative_to(output_root)),
+            "benchmark_csv": str(benchmark_file.relative_to(output_root)),
+            "report_txt": str(report_file.relative_to(output_root)),
+        },
+        "notes": [
+            "Full-period backtests are in-sample unless validation_mode is walk_forward.",
+            "Equity curve is realized-PnL based; intrabar mark-to-market drawdown is not modeled.",
+        ],
+    }
+
+    summary_file.write_text(json.dumps(_json_safe(summary), indent=2, sort_keys=True))
+    logger.info(f"  Run artifacts saved to: {run_dir}")
+    return run_dir
+
+
+# ====================================================================
 # MAIN PIPELINE
 # ====================================================================
 
@@ -754,6 +905,21 @@ def parse_args() -> argparse.Namespace:
                         help="Skip plotting")
     parser.add_argument("--verbose", "-V", action="store_true",
                         help="Verbose output")
+    parser.add_argument("--output-dir", type=str, default="research/backtests",
+                        help="Root directory for reproducible run artifacts")
+    parser.add_argument("--run-id", type=str, default=None,
+                        help="Optional run id for reproducible artifact paths")
+    parser.add_argument("--validation-mode", type=str, default="full_period",
+                        choices=["full_period", "walk_forward"],
+                        help="Validation mode label stored in run metadata")
+    parser.add_argument("--train-start", type=str, default=None,
+                        help=argparse.SUPPRESS)
+    parser.add_argument("--train-end", type=str, default=None,
+                        help=argparse.SUPPRESS)
+    parser.add_argument("--test-start", type=str, default=None,
+                        help=argparse.SUPPRESS)
+    parser.add_argument("--test-end", type=str, default=None,
+                        help=argparse.SUPPRESS)
     return parser.parse_args()
 
 
@@ -955,7 +1121,9 @@ def run_backtest(args) -> Dict:
         df
     )
 
-    metrics_calc.print_report(metrics)
+    metrics_dict = metrics_calc.to_dict(metrics)
+    report_text = metrics_calc.format_report(metrics)
+    print(report_text)
 
     # Save report
     reports_dir = PROJECT_ROOT / "backtest" / "reports"
@@ -968,9 +1136,19 @@ def run_backtest(args) -> Dict:
         f.write(f"Strategy: {strategy.get_name()} {strategy.get_version()}\n")
         f.write(f"Period: {df.index[0]} to {df.index[-1]}\n")
         f.write(f"Bars: {len(df):,}\n\n")
-        metrics_calc.print_report(metrics)
+        f.write(report_text)
 
     logger.info(f"  Report saved to: {report_file}")
+
+    artifact_dir = save_run_artifacts(
+        args=args,
+        result=result,
+        metrics=metrics,
+        metrics_dict=metrics_dict,
+        strategy=strategy,
+        data=df,
+        report_text=report_text,
+    )
 
     # Plot
     if not args.no_plot:
@@ -979,9 +1157,11 @@ def run_backtest(args) -> Dict:
 
     return {
         "metrics": metrics,
+        "metrics_dict": metrics_dict,
         "result": result,
         "strategy": strategy,
         "data": df,
+        "artifact_dir": artifact_dir,
     }
 
 

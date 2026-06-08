@@ -4,8 +4,10 @@ Handles loading, validation, and caching of Binance kline data
 in multiple formats (CSV, Parquet).
 """
 
+import json
 import logging
 import time
+from pandas.errors import EmptyDataError
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -16,6 +18,69 @@ import pandas as pd
 from utils.helpers import get_binance_data_path, get_cache_path
 
 logger = logging.getLogger(__name__)
+
+
+def load_manifest(path: str) -> Dict:
+    """Load a JSON manifest from disk.
+
+    This small function preserves the module-level API used by the
+    original scripts and tests while the DataLoader class handles the
+    production data-discovery path.
+    """
+    manifest_path = Path(path)
+    if not manifest_path.exists():
+        return {}
+
+    with open(manifest_path, "r") as f:
+        return json.load(f)
+
+
+def load_csv(
+    path: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> pd.DataFrame:
+    """Load an OHLCV CSV with a DatetimeIndex.
+
+    Supports both human-readable timestamps and Binance millisecond
+    timestamps, then applies optional inclusive date filtering.
+    """
+    csv_path = Path(path)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Data file not found: {csv_path}")
+
+    try:
+        df = pd.read_csv(csv_path)
+    except EmptyDataError:
+        return pd.DataFrame()
+
+    if df.empty:
+        return df
+
+    if "timestamp" not in df.columns:
+        raise ValueError("CSV must contain a timestamp column")
+
+    timestamp = df["timestamp"]
+    if pd.api.types.is_numeric_dtype(timestamp):
+        # Binance klines use milliseconds. Fall back to seconds for
+        # smaller epoch values to keep the helper generally useful.
+        unit = "ms" if timestamp.dropna().astype("int64").median() > 10**11 else "s"
+        df["timestamp"] = pd.to_datetime(timestamp, unit=unit, utc=True)
+    else:
+        df["timestamp"] = pd.to_datetime(timestamp, utc=True)
+
+    df = df.set_index("timestamp").sort_index()
+
+    for col in ["open", "high", "low", "close", "volume"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    if start_date:
+        df = df[df.index >= pd.Timestamp(start_date, tz="UTC")]
+    if end_date:
+        df = df[df.index <= pd.Timestamp(end_date, tz="UTC")]
+
+    return df
 
 
 @dataclass
@@ -156,8 +221,13 @@ class DataLoader:
                 df = pd.read_parquet(cached_file)
                 # Restore timestamp as index (cache was written with index=False)
                 if "timestamp" in df.columns:
-                    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
+                    if pd.api.types.is_numeric_dtype(df["timestamp"]):
+                        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
+                    else:
+                        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
                     df = df.set_index("timestamp")
+                elif isinstance(df.index, pd.DatetimeIndex):
+                    df.index = pd.to_datetime(df.index, utc=True)
                 # Verify we got a proper DatetimeIndex
                 if not isinstance(df.index, pd.DatetimeIndex):
                     logger.warning(f"  Cache has invalid index ({type(df.index).__name__}), rebuilding from CSV")
@@ -192,7 +262,10 @@ class DataLoader:
         if use_cache:
             try:
                 cached_file.parent.mkdir(parents=True, exist_ok=True)
-                df.to_parquet(cached_file, index=False)
+                cache_df = df.reset_index()
+                if "timestamp" not in cache_df.columns:
+                    cache_df = cache_df.rename(columns={cache_df.columns[0]: "timestamp"})
+                cache_df.to_parquet(cached_file, index=False)
                 if self.verbose:
                     cache_size = cached_file.stat().st_size / 1e6
                     logger.info(f"  Cached to {cached_file} ({cache_size:.1f}MB)")

@@ -75,6 +75,10 @@ class DataPreprocessor:
 
         return df
 
+    def process(self, df: pd.DataFrame, symbol: str = "UNKNOWN") -> pd.DataFrame:
+        """Backward-compatible alias for preprocess()."""
+        return self.preprocess(df, symbol=symbol)
+
     def _clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Clean raw data: handle missing values, outliers, duplicates.
 
@@ -84,6 +88,19 @@ class DataPreprocessor:
         Returns:
             Cleaned DataFrame.
         """
+        df = df.copy()
+
+        if "timestamp" in df.columns:
+            timestamp = df["timestamp"]
+            if pd.api.types.is_numeric_dtype(timestamp):
+                unit = "ms" if timestamp.dropna().astype("int64").median() > 10**11 else "s"
+                df["timestamp"] = pd.to_datetime(timestamp, unit=unit, utc=True)
+            else:
+                df["timestamp"] = pd.to_datetime(timestamp, utc=True)
+            df = df.set_index("timestamp")
+        elif not isinstance(df.index, pd.DatetimeIndex):
+            raise ValueError("DataFrame must have a DatetimeIndex or timestamp column")
+
         original_len = len(df)
 
         # Sort by index
@@ -126,7 +143,7 @@ class DataPreprocessor:
         # Remove bars with > 50% price change (likely data errors in 1m)
         if len(df) > 1:
             returns = df["close"].pct_change(fill_method=None).abs()
-            extreme_mask = returns <= 0.50
+            extreme_mask = returns.isna() | (returns <= 0.50)
             extreme_count = (~extreme_mask).sum()
             if extreme_count > 0:
                 logger.debug(f"  Removed {extreme_count} extreme moves (>50%)")

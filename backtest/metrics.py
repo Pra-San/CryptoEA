@@ -43,6 +43,8 @@ class PerformanceMetrics:
     total_trades: int = 0
     winning_trades: int = 0
     losing_trades: int = 0
+    gross_profit: float = 0.0
+    gross_loss: float = 0.0
 
     # Drawdown Analysis
     max_drawdown: float = 0.0
@@ -56,10 +58,18 @@ class PerformanceMetrics:
     avg_win: float = 0.0
     avg_loss: float = 0.0
     avg_pnl: float = 0.0
+    median_pnl: float = 0.0
     expectancy: float = 0.0
+    avg_trade_return: float = 0.0
+    median_trade_return: float = 0.0
+    best_trade: float = 0.0
+    worst_trade: float = 0.0
+    payoff_ratio: float = 0.0
+    trades_per_day: float = 0.0
     avg_holding_bars: int = 0
     max_consecutive_wins: int = 0
     max_consecutive_losses: int = 0
+    exposure_pct: float = 0.0
 
     # Risk Metrics
     var_95: float = 0.0
@@ -88,13 +98,90 @@ class BacktestMetrics:
         result = metrics.calculate(backtest_result, data)
     """
 
-    def __init__(self, risk_free_rate: float = 0.0) -> None:
+    def __init__(
+        self,
+        trade_log: Optional[pd.DataFrame] = None,
+        equity_curve: Optional[pd.Series] = None,
+        risk_free_rate: float = 0.0,
+    ) -> None:
         """Initialize the metrics calculator.
 
         Args:
+            trade_log: Optional legacy trade log DataFrame.
+            equity_curve: Optional legacy equity curve Series.
             risk_free_rate: Annual risk-free rate (0 for crypto).
         """
+        if isinstance(trade_log, (int, float)) and equity_curve is None:
+            risk_free_rate = float(trade_log)
+            trade_log = None
+
+        self.trade_log = trade_log
+        self.equity_curve = equity_curve
         self.risk_free_rate = risk_free_rate
+
+    def calculate_all(self) -> Dict[str, float]:
+        """Calculate metrics for the legacy DataFrame/Series API."""
+        trade_log = self.trade_log
+        equity = self.equity_curve
+
+        if trade_log is None or trade_log.empty:
+            return self._metrics_to_dict(PerformanceMetrics())
+
+        pnl_col = "pnl" if "pnl" in trade_log.columns else None
+        return_col = (
+            "pnl_pct"
+            if "pnl_pct" in trade_log.columns
+            else "return_pct"
+            if "return_pct" in trade_log.columns
+            else None
+        )
+
+        pnls = trade_log[pnl_col].dropna().astype(float) if pnl_col else pd.Series(dtype=float)
+        returns = trade_log[return_col].dropna().astype(float) if return_col else pd.Series(dtype=float)
+        wins = pnls[pnls > 0]
+        losses = pnls[pnls <= 0]
+
+        m = PerformanceMetrics()
+        m.total_trades = int(len(trade_log))
+        m.winning_trades = int(len(wins))
+        m.losing_trades = int(len(losses))
+        m.win_rate = float(len(wins) / len(pnls)) if len(pnls) else 0.0
+        m.avg_win = float(wins.mean()) if len(wins) else 0.0
+        m.avg_loss = float(losses.mean()) if len(losses) else 0.0
+        m.avg_pnl = float(pnls.mean()) if len(pnls) else 0.0
+        m.median_pnl = float(pnls.median()) if len(pnls) else 0.0
+        m.best_trade = float(pnls.max()) if len(pnls) else 0.0
+        m.worst_trade = float(pnls.min()) if len(pnls) else 0.0
+        m.gross_profit = float(wins.sum()) if len(wins) else 0.0
+        m.gross_loss = float(abs(losses.sum())) if len(losses) else 0.0
+        m.profit_factor = (
+            m.gross_profit / m.gross_loss
+            if m.gross_loss > 0
+            else float("inf")
+            if m.gross_profit > 0
+            else 0.0
+        )
+        m.expectancy = m.avg_win * m.win_rate + m.avg_loss * (1 - m.win_rate)
+        m.avg_trade_return = float(returns.mean()) if len(returns) else 0.0
+        m.median_trade_return = float(returns.median()) if len(returns) else 0.0
+        m.payoff_ratio = abs(m.avg_win / m.avg_loss) if m.avg_loss else 0.0
+        m.max_consecutive_wins = self._max_consecutive(pnls.tolist(), lambda x: x > 0)
+        m.max_consecutive_losses = self._max_consecutive(pnls.tolist(), lambda x: x <= 0)
+
+        if equity is not None and len(equity) > 1:
+            equity = equity.astype(float)
+            initial = float(equity.iloc[0])
+            final = float(equity.iloc[-1])
+            m.total_return = (final - initial) / initial if initial else 0.0
+            eq_returns = equity.pct_change().dropna()
+            if len(eq_returns) > 1 and eq_returns.std() > 0:
+                m.sharpe_ratio = float((eq_returns.mean() / eq_returns.std()) * np.sqrt(252 * 24))
+            dd = self._calculate_drawdown(equity)
+            m.max_drawdown = float(dd.min()) if len(dd) else 0.0
+            m.max_drawdown_duration = self._max_drawdown_duration(dd)
+            m.calmar_ratio = abs(m.total_return / m.max_drawdown) if m.max_drawdown else 0.0
+
+        return self._metrics_to_dict(m)
 
     def calculate(
         self, result: BacktestResult, data: Optional[pd.DataFrame] = None
@@ -133,7 +220,17 @@ class BacktestMetrics:
         metrics.avg_win = np.mean(wins) if wins else 0
         metrics.avg_loss = np.mean(losses) if losses else 0
         metrics.avg_pnl = np.mean(pnls) if pnls else 0
-        metrics.expectancy = metrics.avg_pnl * metrics.win_rate + metrics.avg_loss * (1 - metrics.win_rate)
+        metrics.median_pnl = np.median(pnls) if pnls else 0
+        metrics.best_trade = max(pnls) if pnls else 0
+        metrics.worst_trade = min(pnls) if pnls else 0
+        metrics.gross_profit = sum(wins)
+        metrics.gross_loss = abs(sum(losses))
+        metrics.expectancy = metrics.avg_win * metrics.win_rate + metrics.avg_loss * (1 - metrics.win_rate)
+        metrics.payoff_ratio = abs(metrics.avg_win / metrics.avg_loss) if metrics.avg_loss != 0 else 0
+
+        if pnl_pcts:
+            metrics.avg_trade_return = float(np.mean(pnl_pcts))
+            metrics.median_trade_return = float(np.median(pnl_pcts))
 
         # Average holding time
         holding_times = [t.holding_bars for t in completed_trades]
@@ -150,6 +247,14 @@ class BacktestMetrics:
             initial = result.config.initial_balance if result.config else 10000
             final = equity.iloc[-1]
             metrics.total_return = (final - initial) / initial
+
+            if isinstance(equity.index, pd.DatetimeIndex):
+                days = max((equity.index[-1] - equity.index[0]).total_seconds() / 86400, 1)
+                metrics.trades_per_day = metrics.total_trades / days
+                metrics.exposure_pct = min(
+                    1.0,
+                    sum(t.holding_bars for t in completed_trades) / len(equity),
+                )
 
             # CAGR
             start_date = result.metadata.get("start_date", "")
@@ -181,14 +286,12 @@ class BacktestMetrics:
             metrics.calmar_ratio = metrics.cagr / abs(self._max_drawdown_from_equity(equity)) if self._max_drawdown_from_equity(equity) != 0 else 0
 
             # Profit Factor
-            gross_profit = sum(wins)
-            gross_loss = abs(sum(losses))
-            metrics.profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf') if gross_profit > 0 else 0
+            metrics.profit_factor = metrics.gross_profit / metrics.gross_loss if metrics.gross_loss > 0 else float('inf') if metrics.gross_profit > 0 else 0
 
         # --- Drawdown Analysis ---
         if equity is not None:
             dd = self._calculate_drawdown(equity)
-            metrics.max_drawdown = dd.max() if len(dd) > 0 else 0
+            metrics.max_drawdown = dd.min() if len(dd) > 0 else 0
             metrics.max_drawdown_duration = self._max_drawdown_duration(dd)
             metrics.avg_drawdown = dd.mean() if len(dd) > 0 else 0
             metrics.recovery_factor = abs(metrics.total_return / metrics.max_drawdown) if metrics.max_drawdown != 0 else 0
@@ -262,8 +365,9 @@ class BacktestMetrics:
             f"Total Trades: {m.total_trades} (Win Rate: {m.win_rate:.1%})",
             f"Total Return: {m.total_return:.1%} | CAGR: {m.cagr:.1%}",
             f"Sharpe: {m.sharpe_ratio:.2f} | Sortino: {m.sortino_ratio:.2f} | Calmar: {m.calmar_ratio:.2f}",
-            f"Max DD: {m.max_drawdown:.1%} | Profit Factor: {m.profit_factor:.2f}",
+            f"Max DD: {m.max_drawdown:.4%} | Profit Factor: {m.profit_factor:.2f}",
             f"Avg PnL: {m.avg_pnl:,.2f} | Expectancy: {m.expectancy:,.2f}",
+            f"Trades/Day: {m.trades_per_day:.2f} | Exposure: {m.exposure_pct:.1%}",
             f"Max Consecutive Wins: {m.max_consecutive_wins} | Losses: {m.max_consecutive_losses}",
         ]
 
@@ -345,52 +449,127 @@ class BacktestMetrics:
 
         return max_count
 
+    def _metrics_to_dict(self, m: PerformanceMetrics) -> Dict[str, float]:
+        """Convert metrics to a flat dictionary for JSON/tests."""
+        return {
+            "total_return": float(m.total_return),
+            "total_return_pct": float(m.total_return * 100),
+            "cagr": float(m.cagr),
+            "cagr_pct": float(m.cagr * 100),
+            "sharpe_ratio": float(m.sharpe_ratio),
+            "sortino_ratio": float(m.sortino_ratio),
+            "calmar_ratio": float(m.calmar_ratio),
+            "profit_factor": float(m.profit_factor),
+            "total_trades": int(m.total_trades),
+            "winning_trades": int(m.winning_trades),
+            "losing_trades": int(m.losing_trades),
+            "gross_profit": float(m.gross_profit),
+            "gross_loss": float(m.gross_loss),
+            "max_drawdown": float(m.max_drawdown),
+            "max_drawdown_pct": float(abs(m.max_drawdown) * 100),
+            "max_drawdown_duration": int(m.max_drawdown_duration),
+            "avg_drawdown": float(m.avg_drawdown),
+            "recovery_factor": float(m.recovery_factor),
+            "ulcer_index": float(m.ulcer_index),
+            "win_rate": float(m.win_rate),
+            "avg_win": float(m.avg_win),
+            "avg_loss": float(m.avg_loss),
+            "avg_pnl": float(m.avg_pnl),
+            "median_pnl": float(m.median_pnl),
+            "expectancy": float(m.expectancy),
+            "avg_trade_return": float(m.avg_trade_return),
+            "median_trade_return": float(m.median_trade_return),
+            "best_trade": float(m.best_trade),
+            "worst_trade": float(m.worst_trade),
+            "payoff_ratio": float(m.payoff_ratio),
+            "trades_per_day": float(m.trades_per_day),
+            "avg_holding_bars": int(m.avg_holding_bars),
+            "max_consecutive_wins": int(m.max_consecutive_wins),
+            "max_consecutive_losses": int(m.max_consecutive_losses),
+            "exposure_pct": float(m.exposure_pct),
+            "var_95": float(m.var_95),
+            "cvar_95": float(m.cvar_95),
+            "beta": float(m.beta),
+            "alpha": float(m.alpha),
+            "total_fees": float(m.total_fees),
+            "total_slippage": float(m.total_slippage),
+            "best_month": float(m.best_month),
+            "worst_month": float(m.worst_month),
+            "profitable_months": int(m.profitable_months),
+            "total_months": int(m.total_months),
+        }
+
+    def to_dict(self, metrics: PerformanceMetrics) -> Dict[str, float]:
+        """Public serializer for PerformanceMetrics."""
+        return self._metrics_to_dict(metrics)
+
+    def format_report(self, metrics: PerformanceMetrics) -> str:
+        """Return a formatted metrics report as text."""
+        lines = [
+            "",
+            "=" * 60,
+            "  BACKTEST PERFORMANCE REPORT",
+            "=" * 60,
+            "",
+            metrics.summary,
+            "",
+            "  Trade Statistics:",
+            f"    Total Trades:       {metrics.total_trades}",
+            f"    Winning Trades:     {metrics.winning_trades} ({metrics.win_rate:.1%})",
+            f"    Losing Trades:      {metrics.losing_trades}",
+            f"    Win Rate:           {metrics.win_rate:.1%}",
+            f"    Avg Win:            {metrics.avg_win:,.2f}",
+            f"    Avg Loss:           {metrics.avg_loss:,.2f}",
+            f"    Median PnL:         {metrics.median_pnl:,.2f}",
+            f"    Best Trade:         {metrics.best_trade:,.2f}",
+            f"    Worst Trade:        {metrics.worst_trade:,.2f}",
+            f"    Profit Factor:      {metrics.profit_factor:.2f}",
+            f"    Payoff Ratio:       {metrics.payoff_ratio:.2f}",
+            f"    Expectancy:         {metrics.expectancy:,.2f}",
+            f"    Avg Trade Return:   {metrics.avg_trade_return:.4%}",
+            f"    Trades/Day:         {metrics.trades_per_day:.2f}",
+            f"    Avg Holding Bars:   {metrics.avg_holding_bars}",
+            f"    Exposure:           {metrics.exposure_pct:.1%}",
+            "",
+            "  Performance Ratios:",
+            f"    Total Return:       {metrics.total_return:.2%}",
+            f"    CAGR:               {metrics.cagr:.2%}",
+            f"    Sharpe Ratio:       {metrics.sharpe_ratio:.2f}",
+            f"    Sortino Ratio:      {metrics.sortino_ratio:.2f}",
+            f"    Calmar Ratio:       {metrics.calmar_ratio:.2f}",
+            "",
+            "  Drawdown Analysis:",
+            f"    Max Drawdown:       {metrics.max_drawdown:.4%}",
+            f"    Avg Drawdown:       {metrics.avg_drawdown:.4%}",
+            f"    Max DD Duration:    {metrics.max_drawdown_duration} bars",
+            f"    Recovery Factor:    {metrics.recovery_factor:.2f}",
+            f"    Ulcer Index:        {metrics.ulcer_index:.6f}",
+            "",
+            "  Risk Metrics:",
+            f"    VaR (95%):          {metrics.var_95:.4%}",
+            f"    CVaR (95%):         {metrics.cvar_95:.4%}",
+            f"    Beta:               {metrics.beta:.4f}",
+            f"    Alpha:              {metrics.alpha:.4%}",
+            "",
+            "  Execution Quality:",
+            f"    Total Fees:         {metrics.total_fees:,.2f}",
+            f"    Total Slippage:     {metrics.total_slippage:,.2f}",
+        ]
+
+        if metrics.total_months > 0:
+            lines.extend([
+                f"    Best Month:         {metrics.best_month:.2%}",
+                f"    Worst Month:        {metrics.worst_month:.2%}",
+                f"    Profitable Months:  {metrics.profitable_months}/{metrics.total_months}",
+            ])
+
+        lines.extend(["", "=" * 60, ""])
+        return "\n".join(lines)
+
     def print_report(self, metrics: PerformanceMetrics) -> None:
         """Print a formatted metrics report.
 
         Args:
             metrics: PerformanceMetrics to display.
         """
-        print("\n" + "=" * 60)
-        print("  BACKTEST PERFORMANCE REPORT")
-        print("=" * 60)
-        print(f"\n{metrics.summary}")
-        print(f"\n  Trade Statistics:")
-        print(f"    Total Trades:     {metrics.total_trades}")
-        print(f"    Winning Trades:   {metrics.winning_trades} ({metrics.win_rate:.1%})")
-        print(f"    Losing Trades:    {metrics.losing_trades}")
-        print(f"    Win Rate:         {metrics.win_rate:.1%}")
-        print(f"    Avg Win:          {metrics.avg_win:,.2f}")
-        print(f"    Avg Loss:         {metrics.avg_loss:,.2f}")
-        print(f"    Profit Factor:    {metrics.profit_factor:.2f}")
-        print(f"    Expectancy:       {metrics.expectancy:,.2f}")
-        print(f"    Avg Holding Bars: {metrics.avg_holding_bars}")
-
-        print(f"\n  Performance Ratios:")
-        print(f"    Total Return:     {metrics.total_return:.1%}")
-        print(f"    CAGR:             {metrics.cagr:.1%}")
-        print(f"    Sharpe Ratio:     {metrics.sharpe_ratio:.2f}")
-        print(f"    Sortino Ratio:    {metrics.sortino_ratio:.2f}")
-        print(f"    Calmar Ratio:     {metrics.calmar_ratio:.2f}")
-
-        print(f"\n  Drawdown Analysis:")
-        print(f"    Max Drawdown:     {metrics.max_drawdown:.1%}")
-        print(f"    Max DD Duration:  {metrics.max_drawdown_duration} bars")
-        print(f"    Recovery Factor:  {metrics.recovery_factor:.2f}")
-        print(f"    Ulcer Index:      {metrics.ulcer_index:.2f}")
-
-        print(f"\n  Risk Metrics:")
-        print(f"    VaR (95%):        {metrics.var_95:.2%}")
-        print(f"    CVaR (95%):       {metrics.cvar_95:.2%}")
-        print(f"    Beta:             {metrics.beta:.2f}")
-        print(f"    Alpha:            {metrics.alpha:.2%}")
-
-        print(f"\n  Execution Quality:")
-        print(f"    Total Fees:       {metrics.total_fees:,.2f}")
-        print(f"    Total Slippage:   {metrics.total_slippage:,.2f}")
-        if metrics.total_months > 0:
-            print(f"    Best Month:       {metrics.best_month:.1%}")
-            print(f"    Worst Month:      {metrics.worst_month:.1%}")
-            print(f"    Profitable Months: {metrics.profitable_months}/{metrics.total_months}")
-
-        print("\n" + "=" * 60 + "\n")
+        print(self.format_report(metrics))
