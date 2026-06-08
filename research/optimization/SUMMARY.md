@@ -51,3 +51,50 @@ This remains a research candidate, not a deployable edge.
 ## Deployment Status
 
 No strategy in this exploration should be deployed live yet. The next useful work is to test a new strategy family or add market-regime filters, not to tune the current v3 parameter space harder.
+
+## Second-Pass Family Exploration
+
+Additional work on 2026-06-08 expanded the search beyond v3 into five simple, auditable strategy families:
+
+- Trend pullback
+- Channel breakout
+- Volatility-squeeze breakout
+- Range reversion
+- EMA momentum
+
+The search also fixed a vectorized-engine signal handling bug where direct `-1 -> +1` or `+1 -> -1` flips were not counted as fresh entry events.
+
+Best strict BTCUSDT 4h holdout candidate:
+
+- Family: channel breakout
+- Stress costs: 10 bps fee + 20 bps adverse execution
+- Stress PF: 1.85
+- Stress expectancy: 0.366R
+- Stress max drawdown: 5.44R
+- Stress trades: 33
+
+Fixed 12-month train / 3-month test walk-forward for that candidate failed:
+
+- Profitable windows: 5 / 17
+- Mean expectancy: -0.077R
+- Trade-weighted expectancy: 0.019R
+- Max drawdown: 4.00R
+
+Best SOLUSDT 4h family candidate was more stable but too weak:
+
+- Fixed walk-forward profitable windows: 9 / 17
+- Mean expectancy: 0.048R
+- Trade-weighted expectancy: 0.044R
+- Max drawdown: 2.10R
+
+Walk-forward-trained family search also failed to produce a deployable candidate:
+
+- BTCUSDT 4h best validation PF: 1.15, validation expectancy: 0.057R, train-WF positive windows: 4 / 11
+- SOLUSDT 4h best validation PF: 0.88, validation expectancy: -0.030R, train-WF positive windows: 5 / 11
+
+Optimization dashboard:
+
+- `research/optimization/dashboard.html`
+- `research/optimization/optimization_index.csv`
+
+Conclusion remains unchanged: no candidate found so far is live-deployment worthy under corrected execution, Binance-style commissions, 20 bps adverse execution stress, and walk-forward validation.

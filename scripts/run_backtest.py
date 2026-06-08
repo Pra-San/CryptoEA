@@ -430,18 +430,15 @@ class VectorizedBacktestEngine:
         tps = self.data["take_profit"].values.astype(float)
         timestamps = self.data.index
 
-        # Step 1: Identify entry points (signal transitions)
-        # A long entry occurs when signal goes from 0 to 1
-        # A short entry occurs when signal goes from 0 to -1
-        signal_diff = np.zeros(len(signals), dtype=int)
-        signal_diff[1:] = signals[1:] - signals[:-1]
+        # Step 1: Identify entry events. Direct flips from -1 to +1 or +1 to -1
+        # must count as a fresh signal; using raw diffs would miss +/-2 flips.
+        previous_signals = np.zeros(len(signals), dtype=int)
+        previous_signals[1:] = signals[:-1]
 
         # Signals are known only after the signal bar closes, so execute on
         # the next bar's open. This avoids lookahead from using a close-derived
         # signal at the same bar's open.
-        long_signal_bars = np.where(signal_diff == 1)[0]
-        short_signal_bars = np.where(signal_diff == -1)[0]
-        all_signal_bars = np.sort(np.unique(np.concatenate([long_signal_bars, short_signal_bars])))
+        all_signal_bars = np.where((signals != 0) & (signals != previous_signals))[0]
         entry_bars = all_signal_bars + 1
         valid_entries = entry_bars < len(signals)
         entry_pairs = list(zip(all_signal_bars[valid_entries], entry_bars[valid_entries]))
