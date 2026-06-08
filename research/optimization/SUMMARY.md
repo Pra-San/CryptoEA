@@ -113,3 +113,21 @@ Representative stressed portfolio results:
 | BTC family + SOL family | 1.72 | 0.114 | 3.08 | 70 | 9 / 17 | 0.011 |
 
 Portfolio diversification reduced R drawdowns in some cases, but it did not produce enough expectancy. The best window count was the BTC/ETH/SOL v3 portfolio at 12 / 17 positive-expectancy windows, but mean expectancy was only 0.038R. This is still too weak for live deployment.
+
+## Fourth-Pass Adaptive Walk-Forward Selection
+
+An adaptive selector was added to test whether choosing candidates from the prior 12-month training window improves robustness. Each 3-month out-of-sample window ranks all saved candidates using only the preceding training period, then trades the top K candidates as an equal-weight portfolio.
+
+All runs below use 10 bps commission, 20 bps adverse execution stress, 1% account risk per trade, and report max drawdown in R.
+
+| Adaptive Run | Positive Exp Windows | Mean Exp R | Trade-Weighted Exp R | Max DD R | Trades |
+|---|---:|---:|---:|---:|---:|
+| Top 1 candidate | 6 / 17 | -0.229 | 0.003 | 9.48 | 113 |
+| Top 2 candidates | 8 / 17 | 0.006 | 0.024 | 6.79 | 247 |
+| Top 3 candidates | 7 / 17 | -0.012 | 0.000 | 7.95 | 375 |
+| Top 2, unique symbols | 6 / 17 | -0.034 | -0.022 | 6.93 | 267 |
+| Top 3, unique symbols | 6 / 17 | -0.011 | -0.018 | 5.18 | 410 |
+
+Adaptive selection did not create a deployable edge. The best variant by mean expectancy was top-2 unrestricted selection, but its average edge was effectively zero and only 8 of 17 out-of-sample windows were positive. The unique-symbol constraint reduced concentration risk but did not improve expectancy.
+
+Conclusion remains unchanged: this OHLCV-only candidate universe does not currently contain an edge strong enough for live deployment after realistic costs, spreads/slippage stress, R drawdown accounting, and walk-forward testing.

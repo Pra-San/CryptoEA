@@ -1,0 +1,205 @@
+{
+  "aggregate": {
+    "max_consecutive_losses": 12,
+    "max_drawdown_pct": 6.729894112889158,
+    "max_drawdown_r": 6.925288479725864,
+    "mean_expectancy_r": -0.03435970012220291,
+    "mean_profit_factor": 1.1043028416708771,
+    "mean_return_pct": -0.36132442224583144,
+    "min_expectancy_r": -0.39474685570201185,
+    "min_profit_factor": 0.09729185794655373,
+    "min_return_pct": -4.25621969231432,
+    "positive_expectancy_windows": 6,
+    "profitable_windows": 6,
+    "total_trades": 267,
+    "trade_weighted_expectancy_r": -0.02194572971707802,
+    "weighted_avg_holding_bars": 16.801498127340825,
+    "weighted_avg_loss_r": -0.42973921610894134,
+    "weighted_avg_win_r": 0.7456986449694651,
+    "weighted_payoff_ratio": 1.6717350567386353,
+    "weighted_trades_per_day": 0.2028238411970703,
+    "windows": 17
+  },
+  "candidate_count": 21,
+  "candidates": [
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_edge_BTCUSDT_12h_20260608_194342",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_12h_20260608_194342/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "12h"
+    },
+    {
+      "kind": "family:ema_momentum",
+      "label": "family_edge_BTCUSDT_1h_20260608_194104",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_1h_20260608_194104/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h"
+    },
+    {
+      "kind": "family:squeeze_breakout",
+      "label": "family_edge_BTCUSDT_4h_20260608_193935",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_4h_20260608_193935/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_edge_BTCUSDT_4h_20260608_194014",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_BTCUSDT_4h_20260608_194014/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:squeeze_breakout",
+      "label": "family_edge_ETHUSDT_4h_20260608_194104",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_ETHUSDT_4h_20260608_194104/best_summary.json",
+      "symbol": "ETHUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:squeeze_breakout",
+      "label": "family_edge_SOLUSDT_4h_20260608_194104",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_edge_SOLUSDT_4h_20260608_194104/best_summary.json",
+      "symbol": "SOLUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_wf_edge_BTCUSDT_12h_20260608_194342",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_wf_edge_BTCUSDT_12h_20260608_194342/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "12h"
+    },
+    {
+      "kind": "family:ema_momentum",
+      "label": "family_wf_edge_BTCUSDT_4h_20260608_194317",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_wf_edge_BTCUSDT_4h_20260608_194317/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "family:channel_breakout",
+      "label": "family_wf_edge_SOLUSDT_4h_20260608_194416",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/family_wf_edge_SOLUSDT_4h_20260608_194416/best_summary.json",
+      "symbol": "SOLUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_1d_20260608_192634",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_1d_20260608_192634/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_1h_20260608_191157",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_1h_20260608_191157/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_1h_20260608_191205",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_1h_20260608_191205/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191322",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191322/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191403",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191403/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191650",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191650/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_191932",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_191932/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_BTCUSDT_4h_20260608_192109",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_BTCUSDT_4h_20260608_192109/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_ETHUSDT_4h_20260608_191748",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_ETHUSDT_4h_20260608_191748/best_summary.json",
+      "symbol": "ETHUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_edge_SOLUSDT_4h_20260608_191748",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_edge_SOLUSDT_4h_20260608_191748/best_summary.json",
+      "symbol": "SOLUSDT",
+      "timeframe": "4h"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_wf_edge_BTCUSDT_1d_20260608_192634",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_wf_edge_BTCUSDT_1d_20260608_192634/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d"
+    },
+    {
+      "kind": "v3",
+      "label": "v3_wf_edge_BTCUSDT_4h_20260608_192533",
+      "path": "/Users/speketi/Projects/CryptoEA/research/optimization/v3_wf_edge_BTCUSDT_4h_20260608_192533/best_summary.json",
+      "symbol": "BTCUSDT",
+      "timeframe": "4h"
+    }
+  ],
+  "costs": {
+    "fee_rate": 0.001,
+    "max_position_pct": 1.0,
+    "risk_per_trade": 0.01,
+    "sizing_mode": "risk_based",
+    "slippage_rate": 0.002
+  },
+  "period": {
+    "end": "2025-06-01",
+    "min_train_trades": 12,
+    "start": "2020-01-01",
+    "test_months": 3,
+    "train_months": 12
+  },
+  "selection_counts": {
+    "family_edge_BTCUSDT_12h_20260608_194342": 2,
+    "family_edge_BTCUSDT_1h_20260608_194104": 3,
+    "family_edge_BTCUSDT_4h_20260608_193935": 2,
+    "family_edge_ETHUSDT_4h_20260608_194104": 6,
+    "family_edge_SOLUSDT_4h_20260608_194104": 1,
+    "family_wf_edge_SOLUSDT_4h_20260608_194416": 3,
+    "v3_edge_BTCUSDT_1d_20260608_192634": 3,
+    "v3_edge_BTCUSDT_4h_20260608_191403": 4,
+    "v3_edge_ETHUSDT_4h_20260608_191748": 6,
+    "v3_edge_SOLUSDT_4h_20260608_191748": 2,
+    "v3_wf_edge_BTCUSDT_4h_20260608_192533": 2
+  },
+  "strategy": "adaptive_candidate_selector",
+  "symbol": "ADAPTIVE_PORTFOLIO",
+  "timeframe": "mixed",
+  "top_k": 2,
+  "unique_symbols": true
+}

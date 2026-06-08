@@ -79,6 +79,7 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
     costs = data.get("costs", {})
     portfolio_metrics = data.get("portfolio_metrics", {})
     is_portfolio = bool(portfolio_metrics)
+    is_adaptive = data.get("strategy") == "adaptive_candidate_selector"
     run_dir = path.parent
     return {
         "run_dir": run_dir.name,
@@ -86,7 +87,13 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
         "summary_file": str(path.relative_to(OPT_ROOT)),
         "symbol": data.get("symbol"),
         "timeframe": data.get("timeframe"),
-        "family": "portfolio" if is_portfolio else data.get("params", {}).get("family", "v3"),
+        "family": (
+            "adaptive_portfolio"
+            if is_adaptive
+            else "portfolio"
+            if is_portfolio
+            else data.get("params", {}).get("family", "v3")
+        ),
         "trial": None,
         "trials": None,
         "seed": None,
@@ -114,7 +121,10 @@ def summarize_walk_forward(path: Path) -> dict[str, Any]:
         "stress_dd_r": None,
         "stress_dd_pct": None,
         "stress_return_pct": None,
-        "best_params": json.dumps(data.get("params", data.get("candidates", {})), sort_keys=True),
+        "best_params": json.dumps(
+            data.get("params", data.get("selection_counts", data.get("candidates", {}))),
+            sort_keys=True,
+        ),
     }
 
 
@@ -131,7 +141,7 @@ def collect_rows() -> list[dict[str, Any]]:
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     fields = list(rows[0].keys()) if rows else []
     with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
+        writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

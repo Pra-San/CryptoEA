@@ -32,7 +32,12 @@ from scripts.explore_strategy_families import PARAM_FIELDS as FAMILY_PARAM_FIELD
 from scripts.explore_strategy_families import apply_strategy
 from scripts.explore_v3_edge import PARAM_FIELDS as V3_PARAM_FIELDS
 from scripts.explore_v3_edge import make_strategy as make_v3_strategy
-from scripts.run_backtest import VectorizedBacktestConfig, VectorizedBacktestEngine, vectorized_preprocess
+from scripts.run_backtest import (
+    MomentumBreakoutConfig,
+    VectorizedBacktestConfig,
+    VectorizedBacktestEngine,
+    vectorized_preprocess,
+)
 
 
 logger = logging.getLogger("strategy_portfolio")
@@ -77,7 +82,8 @@ def load_candidate(path: Path) -> Candidate:
         params = {field: best[field] for field in FAMILY_PARAM_FIELDS}
         kind = f"family:{family}"
     else:
-        params = {field: best[field] for field in V3_PARAM_FIELDS}
+        defaults = MomentumBreakoutConfig()
+        params = {field: best.get(field, getattr(defaults, field)) for field in V3_PARAM_FIELDS}
         kind = "v3"
     return Candidate(
         label=path.parent.name,
@@ -295,7 +301,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         return
     fields = sorted({key for row in rows for key in row.keys()})
     with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
+        writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
