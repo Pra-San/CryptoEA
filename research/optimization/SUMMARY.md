@@ -247,3 +247,43 @@ Best SOLUSDT 1h candidate, 2024-01-01 to 2025-06-01:
 | 10 bps fee + 50 bps shock slippage | No prop-firm profile passed in the tested risk grid; the strategy could not reliably reach targets after execution shock. |
 
 Important limitation: daily-loss checks are currently based on closed trade PnL because the simulator does not yet mark open positions intrabar against prop-firm equity rules. Before using this for a real challenge, add intrabar mark-to-market daily loss checks and broker/session-time calendars.
+
+## Tenth-Pass VWAP, Volume Profile, And Momentum Search
+
+VWAP, rolling volume-profile, value-area, and momentum variants were added after the high-winrate partial/trailing search. The new explorer tests:
+
+- Rolling VWAP reclaim and pullback variants
+- UTC daily/session VWAP pullbacks
+- VWAP band reversion
+- Rolling volume-profile POC/VAL/VAH rejection, breakout, and rotation
+- VWAP + profile confluence
+- Momentum + volume breakout
+
+The explorer now records average win, average loss, payoff ratio, expectancy, average holding time, trades/day, trades/week, drawdown in R, and drawdown in percent for both validation and stress cost tiers.
+
+Best validation candidates, 2024-01-01 to 2025-06-01:
+
+| Candidate | Cost Tier | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week | Avg Hold |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BTCUSDT 1h VWAP/profile confluence | 10 bps fee + 10 bps slippage | 258 | 75.2% | 3.73 | 2.98 | 0.297 | 0.587 | -0.582 | 0.98 | 4.54 | 4.03% | 4 | 3.49 | 8 bars |
+| ETHUSDT 1h VWAP/profile confluence | 10 bps fee + 10 bps slippage | 204 | 63.2% | 2.29 | 2.71 | 0.365 | 0.912 | -0.577 | 1.58 | 5.55 | 5.32% | 4 | 2.76 | 8 bars |
+| SOLUSDT 1h daily VWAP pullback | 10 bps fee + 10 bps slippage | 578 | 77.5% | 5.45 | 2.99 | 0.189 | 0.358 | -0.390 | 0.87 | 1.55 | 1.54% | 3 | 7.83 | 8 bars |
+
+Stress validation:
+
+| Candidate | Stress Tier | Trades | Win Rate | Sharpe | PF | Exp R | Max DD R | Max DD % | Trades/Week | Fixed WF |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BTCUSDT 1h VWAP/profile confluence | 10 bps fee + 10 bps stress slippage | 258 | 73.3% | 2.82 | 2.15 | 0.188 | 5.67 | 5.25% | 3.49 | 11 / 11 positive |
+| ETHUSDT 1h VWAP/profile confluence | 10 bps fee + 10 bps stress slippage | 204 | 61.8% | 1.85 | 2.17 | 0.262 | 6.23 | 6.03% | 2.76 | 11 / 11 positive |
+| SOLUSDT 1h daily VWAP pullback | 10 bps fee + 50 bps shock slippage | 577 | 64.6% | 1.60 | 1.28 | 0.043 | 5.34 | 5.23% | 7.81 | 11 / 11 positive, 8 / 11 strict gates |
+
+The SOLUSDT daily VWAP pullback is the closest result to the originally requested high-winrate profile: high trade count, high win rate, high Sharpe, low R drawdown, low percent drawdown, and stable walk-forward windows. It is still not a production-live strategy because full-period 50 bps shock slippage reduces PF to 1.28 and expectancy to 0.043R.
+
+Prop-firm constraint evaluation for the SOLUSDT daily VWAP pullback:
+
+| Execution Tier | Result |
+|---|---|
+| 10 bps fee + 10 bps slippage | Passed 63 / 63 profile-risk combinations tested. It passed all implemented FTMO, The5ers, and FundedNext profiles from 0.10% to 1.00% risk per trade. |
+| 10 bps fee + 50 bps shock slippage | Passed 36 / 63 profile-risk combinations tested. It still hit several prop-style targets before stopping, but the full-period strategy statistics were weak under this shock tier. |
+
+Current status: tag the SOLUSDT 1h daily VWAP pullback as the best paper-trade / prop-challenge research candidate so far. Do not mark it live-deployable until the evaluator includes intrabar mark-to-market prop daily-loss checks, exchange-specific spread models, and at least two weeks of forward paper trading.

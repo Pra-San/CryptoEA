@@ -1,0 +1,85 @@
+{
+  "best_passes": [],
+  "candidate_name": "best_validation_ranked:momentum_volume_breakout",
+  "candidate_section": "best_validation_ranked",
+  "candidate_summary": "research/optimization/vwap_profile_SOLUSDT_1h_20260609_061405/best_summary.json",
+  "costs": {
+    "fee_rate": 0.001,
+    "slippage_rate": 0.005
+  },
+  "day_boundary_hour_utc": 0,
+  "end": "2025-06-01",
+  "profiles": [
+    {
+      "consistency_pct": 0.5,
+      "max_daily_loss_pct": 0.05,
+      "max_total_loss_pct": 0.1,
+      "min_trading_days": 4,
+      "name": "ftmo_2step_phase1",
+      "profit_target_pct": 0.1
+    },
+    {
+      "consistency_pct": 0.5,
+      "max_daily_loss_pct": 0.05,
+      "max_total_loss_pct": 0.1,
+      "min_trading_days": 4,
+      "name": "ftmo_2step_phase2",
+      "profit_target_pct": 0.05
+    },
+    {
+      "consistency_pct": 0.5,
+      "max_daily_loss_pct": 0.03,
+      "max_total_loss_pct": 0.1,
+      "min_trading_days": 0,
+      "name": "ftmo_1step",
+      "profit_target_pct": 0.1
+    },
+    {
+      "consistency_pct": null,
+      "max_daily_loss_pct": 0.05,
+      "max_total_loss_pct": 0.1,
+      "min_trading_days": 3,
+      "name": "the5ers_high_stakes",
+      "profit_target_pct": 0.08
+    },
+    {
+      "consistency_pct": null,
+      "max_daily_loss_pct": 0.05,
+      "max_total_loss_pct": 0.1,
+      "min_trading_days": 5,
+      "name": "fundednext_stellar_2step_p1",
+      "profit_target_pct": 0.08
+    },
+    {
+      "consistency_pct": null,
+      "max_daily_loss_pct": 0.05,
+      "max_total_loss_pct": 0.1,
+      "min_trading_days": 5,
+      "name": "fundednext_stellar_2step_p2",
+      "profit_target_pct": 0.05
+    },
+    {
+      "consistency_pct": null,
+      "max_daily_loss_pct": 0.03,
+      "max_total_loss_pct": 0.06,
+      "min_trading_days": 2,
+      "name": "fundednext_stellar_1step",
+      "profit_target_pct": 0.1
+    }
+  ],
+  "risk_grid": [
+    0.001,
+    0.0015,
+    0.002,
+    0.0025,
+    0.003,
+    0.004,
+    0.005,
+    0.0075,
+    0.01
+  ],
+  "start": "2024-01-01",
+  "strategy": "vwap_volume_profile_momentum_search",
+  "symbol": "SOLUSDT",
+  "timeframe": "1h"
+}
