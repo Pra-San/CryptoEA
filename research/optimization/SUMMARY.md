@@ -287,3 +287,21 @@ Prop-firm constraint evaluation for the SOLUSDT daily VWAP pullback:
 | 10 bps fee + 50 bps shock slippage | Passed 36 / 63 profile-risk combinations tested. It still hit several prop-style targets before stopping, but the full-period strategy statistics were weak under this shock tier. |
 
 Current status: tag the SOLUSDT 1h daily VWAP pullback as the best paper-trade / prop-challenge research candidate so far. Do not mark it live-deployable until the evaluator includes intrabar mark-to-market prop daily-loss checks, exchange-specific spread models, and at least two weeks of forward paper trading.
+
+## Eleventh-Pass Shock-Trained And Filtered Search
+
+After the daily VWAP candidate failed full-period 50 bps shock quality, the search was rerun with the shock model used during training, not only during validation. A separate causal trade-filter optimizer was also added. It filters saved candidate signals by side, UTC hour, day-of-week group, volume ratio, daily volatility, RSI, distance from session VWAP, distance from rolling VWAP, distance from profile POC, and price side of VWAP/POC.
+
+Best new results:
+
+| Branch | Shock Trades | Shock Win Rate | Shock Sharpe | Shock PF | Shock Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Trades/Week | Fixed WF |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| SOLUSDT 1h shock-trained daily VWAP pullback | 153 | 69.9% | 0.91 | 1.32 | 0.061 | 0.350 | -0.610 | 0.57 | 3.75 | 3.69% | 2.07 | 14 / 17 positive |
+| SOLUSDT 1h filtered daily VWAP pullback | 60 | 75.0% | 1.39 | 1.95 | 0.105 | 0.287 | -0.441 | 0.65 | 1.39 | 1.39% | 0.81 | 15 / 17 positive |
+| SOLUSDT 1h filtered shock-trained VWAP | 46 | 69.6% | 0.62 | 1.38 | 0.073 | 0.401 | -0.702 | 0.57 | 3.05 | 3.01% | 0.93 | 14 / 17 positive |
+| SOLUSDT 1h shock-trained state trend | 44 | 52.3% | 0.97 | 1.67 | 0.244 | 1.159 | -0.759 | 1.52 | 2.49 | 2.47% | 0.60 | 7 / 17 positive |
+| ETHUSDT 1h shock-trained state trend | 43 | 55.8% | 0.63 | 1.41 | 0.136 | 0.834 | -0.744 | 1.11 | 3.60 | 3.56% | 0.58 | 8 / 17 positive |
+
+Result: the filter optimizer improved the SOL daily VWAP candidate materially under 50 bps shock, but it still does not meet the requested deployment profile. The best filtered version has good win rate and drawdown, but PF is below 2.5 and trade frequency is only 0.81 trades/week. The stress-trained state-trend branch has larger average wins but does not have stable walk-forward coverage.
+
+Current best research candidate remains the SOLUSDT 1h daily VWAP pullback for paper/prop simulation under normal execution. Current best 50 bps shock candidate is the filtered SOLUSDT daily VWAP pullback, but it is too sparse and not live-deployable.
