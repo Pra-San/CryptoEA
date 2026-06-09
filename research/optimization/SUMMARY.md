@@ -305,3 +305,27 @@ Best new results:
 Result: the filter optimizer improved the SOL daily VWAP candidate materially under 50 bps shock, but it still does not meet the requested deployment profile. The best filtered version has good win rate and drawdown, but PF is below 2.5 and trade frequency is only 0.81 trades/week. The stress-trained state-trend branch has larger average wins but does not have stable walk-forward coverage.
 
 Current best research candidate remains the SOLUSDT 1h daily VWAP pullback for paper/prop simulation under normal execution. Current best 50 bps shock candidate is the filtered SOLUSDT daily VWAP pullback, but it is too sparse and not live-deployable.
+
+## Twelfth-Pass Multi-Timeframe Confluence Search
+
+The next branch tested shifted 4h and daily context on 1h entries. The explorer uses only completed higher-timeframe candles by shifting 4h/daily features one bar before merging them into the 1h frame. Families tested:
+
+- Multi-timeframe momentum breakout
+- Multi-timeframe trend pullback
+- Multi-timeframe Bollinger expansion
+- Multi-timeframe RSI reclaim
+- Multi-timeframe state-follow trend
+
+This pass was guided by multi-timeframe trend/momentum research and practical crypto execution work: higher-timeframe trend confirmation, shifted feature alignment to avoid lookahead, and more patient trade management. It was trained directly under 10 bps Binance-style fee plus 50 bps shock slippage.
+
+Best holdout candidates, 2024-01-01 to 2025-06-01:
+
+| Symbol | Family | Val Trades | Val Win | Val Sharpe | Val PF | Val Exp R | Val DD R | Val TPW | Stress Trades | Stress Win | Stress Sharpe | Stress PF | Stress Exp R | Avg Win R | Avg Loss R | RR | Stress DD R | Stress DD % | Stress TPW | Avg Hold | WF Positive | WF Gates |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BTCUSDT | mtf_state_follow | 118 | 72.0% | 2.37 | 2.99 | 0.160 | 0.95 | 1.60 | 119 | 57.1% | 0.04 | 1.01 | 0.002 | 0.261 | -0.343 | 0.76 | 6.73 | 6.52% | 1.61 | 12 bars | 5 / 17 | 0 / 17 |
+| ETHUSDT | mtf_momentum_breakout | 94 | 75.5% | 1.88 | 4.21 | 0.280 | 1.87 | 1.27 | 94 | 63.8% | 1.06 | 1.79 | 0.112 | 0.396 | -0.389 | 1.01 | 2.94 | 2.91% | 1.27 | 12 bars | 10 / 17 | 0 / 17 |
+| SOLUSDT | mtf_bb_expansion | 34 | 79.4% | 1.66 | 3.74 | 0.393 | 1.60 | 0.46 | 34 | 70.6% | 0.45 | 1.30 | 0.065 | 0.391 | -0.718 | 0.54 | 2.70 | 2.67% | 0.46 | 12 bars | 12 / 17 | 0 / 17 |
+
+Result: rejected. The SOLUSDT setup had an attractive validation win rate but only 34 holdout trades, 0.46 trades/week, and stress PF collapsed to 1.30 after the 50 bps shock model. ETH was more balanced but still failed all walk-forward deployment gates. BTC effectively lost its edge after shock costs.
+
+Current conclusion: pure OHLCV strategy mining is flattening out. The best normal-cost candidate is still the SOLUSDT 1h daily VWAP pullback. The best shock-cost candidate is still the filtered SOLUSDT daily VWAP pullback. To look for a material improvement rather than overfitting the same bars harder, the next research branch should ingest non-OHLCV edge data: funding, open interest, liquidation clusters, order book imbalance, realized spread, and exchange-specific maker/taker execution assumptions.
