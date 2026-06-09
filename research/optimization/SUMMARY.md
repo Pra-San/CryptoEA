@@ -329,3 +329,29 @@ Best holdout candidates, 2024-01-01 to 2025-06-01:
 Result: rejected. The SOLUSDT setup had an attractive validation win rate but only 34 holdout trades, 0.46 trades/week, and stress PF collapsed to 1.30 after the 50 bps shock model. ETH was more balanced but still failed all walk-forward deployment gates. BTC effectively lost its edge after shock costs.
 
 Current conclusion: pure OHLCV strategy mining is flattening out. The best normal-cost candidate is still the SOLUSDT 1h daily VWAP pullback. The best shock-cost candidate is still the filtered SOLUSDT daily VWAP pullback. To look for a material improvement rather than overfitting the same bars harder, the next research branch should ingest non-OHLCV edge data: funding, open interest, liquidation clusters, order book imbalance, realized spread, and exchange-specific maker/taker execution assumptions.
+
+## Thirteenth-Pass Binance Futures-Flow Search
+
+A futures-flow data branch was added to avoid mining the same OHLCV features harder. The downloader builds local parquet datasets from Binance public USD-M archives:
+
+- 5-minute open interest
+- Open-interest value
+- Top-trader long/short ratios
+- Global long/short ratio
+- Taker long/short volume ratio
+- 8-hour funding rates
+
+The futures-flow explorer shifts hourly flow features before merging them into 1h price bars. It tests flow breakout, flow pullback, flow squeeze, funding contrarian reversion, crowding breakout, and taker absorption variants with the same Binance-style fee and shock-slippage assumptions.
+
+Best futures-flow holdouts:
+
+| Run | Family | Val Trades | Val Win | Val Sharpe | Val PF | Val Exp R | Val DD R | Val TPW | Stress Trades | Stress Win | Stress Sharpe | Stress PF | Stress Exp R | Avg Win R | Avg Loss R | RR | Stress DD R | Stress DD % | Stress TPW | Avg Hold | WF Positive | WF Gates |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| SOLUSDT 1h broad flow | flow_breakout | 114 | 73.7% | 2.72 | 3.00 | 0.216 | 1.47 | 1.54 | 114 | 66.7% | 1.25 | 1.53 | 0.075 | 0.322 | -0.420 | 0.76 | 1.70 | 1.69% | 1.54 | 12 bars | 8 / 17 | 0 / 17 |
+| SOLUSDT 1h focused flow | flow_pullback | 99 | 80.8% | 2.52 | 3.42 | 0.217 | 1.12 | 1.34 | 100 | 70.0% | 1.03 | 1.48 | 0.068 | 0.298 | -0.470 | 0.63 | 2.35 | 2.33% | 1.35 | 12 bars | 11 / 12 | 0 / 12 |
+| BTCUSDT 1h focused flow | flow_breakout | 80 | 77.5% | 2.40 | 3.35 | 0.312 | 2.17 | 1.08 | 81 | 65.4% | 0.31 | 1.12 | 0.025 | 0.348 | -0.585 | 0.59 | 3.00 | 2.97% | 1.10 | 12 bars | 13 / 17 | 0 / 17 |
+| ETHUSDT 1h focused flow | flow_breakout | 64 | 79.7% | 1.40 | 2.48 | 0.262 | 3.26 | 0.87 | 64 | 68.8% | 0.02 | 1.00 | 0.002 | 0.393 | -0.858 | 0.45 | 5.98 | 5.87% | 0.87 | 12 bars | 6 / 12 | 0 / 12 |
+
+Result: rejected for live deployment. This is the first branch that materially improves normal-cost holdout quality with non-OHLCV data, especially SOLUSDT focused flow at 80.8% win rate, PF 3.42, and 1.12R drawdown under normal costs. Under 50 bps shock, all branches lose too much expectancy and fail every strict deployment gate. The winners are still too small relative to stressed execution cost.
+
+Current best research lead: SOLUSDT 1h flow pullback is worth further research only if the execution model can be made more precise. It needs maker/taker split, actual spread sampling, and limit-order fill modeling before deciding whether the 50 bps shock model is too conservative or whether the edge is simply not wide enough.
