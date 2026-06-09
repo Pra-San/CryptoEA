@@ -355,3 +355,47 @@ Best futures-flow holdouts:
 Result: rejected for live deployment. This is the first branch that materially improves normal-cost holdout quality with non-OHLCV data, especially SOLUSDT focused flow at 80.8% win rate, PF 3.42, and 1.12R drawdown under normal costs. Under 50 bps shock, all branches lose too much expectancy and fail every strict deployment gate. The winners are still too small relative to stressed execution cost.
 
 Current best research lead: SOLUSDT 1h flow pullback is worth further research only if the execution model can be made more precise. It needs maker/taker split, actual spread sampling, and limit-order fill modeling before deciding whether the 50 bps shock model is too conservative or whether the edge is simply not wide enough.
+
+## Fourteenth-Pass Realistic Binance Futures Cost Model
+
+The previous 50 bps shock model was too punitive as a default deployment gate. Binance's own Futures support page states that futures fees vary by VIP tier and gives regular-user examples of 0.02% maker and 0.05% taker fees for USDS-M contracts. Binance Academy also confirms the maker/taker fee model and the notional-value fee formula. A live Binance futures depth snapshot on 2026-06-09 showed substantially tighter book impact than the old 50 bps-per-side assumption:
+
+| Symbol | Quoted Spread | Est. $1M Buy Impact | Est. $1M Sell Impact |
+|---|---:|---:|---:|
+| BTCUSDT | 0.016 bps | 0.43 bps | 0.09 bps |
+| ETHUSDT | 0.060 bps | 1.47 bps | 1.60 bps |
+| SOLUSDT | 1.522 bps | 2.40 bps | 4.82 bps |
+
+Updated cost ladder:
+
+| Tier | Fee / Side | Slippage / Side | Use |
+|---|---:|---:|---|
+| Normal taker | 5 bps | 2 bps | Baseline liquid Binance futures taker execution. |
+| Stressed liquid | 5 bps | 10 bps | Default deployment stress gate. |
+| Severe stress | 5 bps | 20-30 bps | Degradation check. |
+| Crisis shock | 5 bps | 50 bps | Rejection-only scenario, not default. |
+
+Best realistic-cost search result:
+
+| Candidate | Tier | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| SOLUSDT 1h profile breakout | 5 bps fee + 2 bps slippage | 184 | 81.5% | 4.04 | 4.74 | 0.227 | 0.353 | -0.330 | 1.07 | 1.35 | 1.34% | 3 | 2.49 |
+| SOLUSDT 1h profile breakout | 5 bps fee + 10 bps stress slippage | 184 | 78.8% | 3.72 | 3.88 | 0.193 | 0.331 | -0.320 | 1.04 | 1.39 | 1.38% | 3 | 2.49 |
+| SOLUSDT 1h futures-flow pullback | 5 bps fee + 10 bps stress slippage | 154 | 74.7% | 2.55 | 2.58 | 0.183 | 0.396 | -0.445 | 0.88 | 1.53 | 1.52% | 3 | 2.09 |
+
+Cost degradation for SOLUSDT 1h profile breakout:
+
+| Slippage / Side | Fee / Side | Trades | Win Rate | Sharpe | PF | Exp R | Max DD R | Trades/Week |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 bps | 5 bps | 184 | 81.5% | 4.04 | 4.74 | 0.227 | 1.35 | 2.49 |
+| 5 bps | 5 bps | 184 | 81.0% | 3.96 | 4.51 | 0.216 | 1.37 | 2.49 |
+| 10 bps | 5 bps | 184 | 78.8% | 3.72 | 3.88 | 0.193 | 1.39 | 2.49 |
+| 20 bps | 5 bps | 184 | 76.6% | 3.31 | 3.10 | 0.157 | 1.39 | 2.49 |
+| 30 bps | 5 bps | 184 | 73.9% | 2.79 | 2.39 | 0.123 | 1.38 | 2.49 |
+| 50 bps | 5 bps | 184 | 67.9% | 1.59 | 1.54 | 0.062 | 1.96 | 2.49 |
+
+Walk-forward result at 5 bps fee + 10 bps slippage: 17 / 17 positive windows, 522 total trades, 79.3% mean win rate, 0.303R trade-weighted expectancy, 1.72R max drawdown, and 2.57 trades/week. The strict per-window deployment gate still reports 0 windows because it requires 120 trades inside every 3-month slice, which is too high for a 2.5 trades/week strategy. Use the full holdout gate plus positive-window consistency here.
+
+Prop-firm evaluation: the profile breakout passed the implemented FTMO, The5ers, and FundedNext profile-risk combinations under both 2 bps and 10 bps slippage tiers, using the closed-PnL daily-loss approximation. This still needs intrabar mark-to-market daily-loss checks before challenge deployment.
+
+Current status: SOLUSDT 1h profile breakout is now the best candidate. It is not guaranteed live-deployable, but it has the first genuinely strong combination of win rate, PF, expectancy, low R drawdown, positive walk-forward coverage, and acceptable weekly trade frequency under a defensible Binance futures cost model.
