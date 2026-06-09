@@ -216,3 +216,34 @@ Best exact top-3 unique-symbol adaptive portfolio at 10 bps fee + 10 bps stress 
 | Full strategy | 16 / 17 | 7 / 17 | 0.184 | 8.06 | 1,406 | Better table-style R, but drawdown is too high and PF consistency is not deployable. |
 
 Conclusion: the best current direction is the SOLUSDT 1h partial/trailing trend-state candidate plus adaptive portfolio research. The SOL candidate can be tagged as a research candidate for paper trading, but not as a deployable production strategy until it survives forward paper trading and additional predeclared walk-forward/regime tests.
+
+## Ninth-Pass Prop-Firm Constraint Optimization
+
+A prop-firm evaluator was added to convert strategy output into challenge-style pass/fail checks. It tests:
+
+- Profit target
+- Daily loss limit
+- Maximum total loss
+- Minimum trading days
+- Best-day consistency where applicable
+
+Implemented profiles:
+
+| Profile | Target | Daily Loss | Max Loss | Min Days | Consistency |
+|---|---:|---:|---:|---:|---:|
+| FTMO 2-Step Phase 1 | 10% | 5% | 10% | 4 | 50% best day |
+| FTMO 2-Step Phase 2 | 5% | 5% | 10% | 4 | 50% best day |
+| FTMO 1-Step | 10% | 3% | 10% | 0 | 50% best day |
+| The5ers High Stakes | 8% | 5% | 10% | 3 | n/a |
+| FundedNext Stellar 2-Step Phase 1 | 8% | 5% | 10% | 5 | n/a |
+| FundedNext Stellar 2-Step Phase 2 | 5% | 5% | 10% | 5 | n/a |
+| FundedNext Stellar 1-Step | 10% | 3% | 6% | 2 | n/a |
+
+Best SOLUSDT 1h candidate, 2024-01-01 to 2025-06-01:
+
+| Execution Tier | Result |
+|---|---|
+| 10 bps fee + 10 bps stress slippage | Passed all implemented profiles for risk-per-trade values from 0.10% to 1.00% using closed-PnL daily loss approximation. At 1.00% risk, target-pass runs stayed near -2.56% minimum closed equity and -1.27% worst closed daily loss before target. |
+| 10 bps fee + 50 bps shock slippage | No prop-firm profile passed in the tested risk grid; the strategy could not reliably reach targets after execution shock. |
+
+Important limitation: daily-loss checks are currently based on closed trade PnL because the simulator does not yet mark open positions intrabar against prop-firm equity rules. Before using this for a real challenge, add intrabar mark-to-market daily loss checks and broker/session-time calendars.
