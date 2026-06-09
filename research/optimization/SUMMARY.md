@@ -446,3 +446,52 @@ Walk-forward aggregate from the fixed candidate:
 Prop-firm evaluation under 5 bps fee + 10 bps slippage passed all implemented FTMO, The5ers, and FundedNext profiles in the tested risk grid using closed-PnL daily-loss approximation. The lowest passing risks were 0.10% for 5% targets and 0.15% for 8-10% targets; larger risk settings also passed in the current closed-PnL model.
 
 Current status: this supersedes the SOLUSDT 1h profile breakout as the best candidate so far. It improves validation trade count by 54%, deployment-stress expectancy by 34%, trades/week by 54%, win rate, Sharpe, PF, max R drawdown, percent drawdown, and max loss streak. It is the first candidate that looks close to the originally requested table under a defensible Binance futures cost model. It still needs forward paper trading and intrabar mark-to-market daily-loss simulation before real prop-firm or live deployment.
+
+## Sixteenth-Pass Expectancy-Focused Momentum Search
+
+The momentum/volume breakout branch was rerun as a focused 18,000-trial search after the prior candidate still had modest R expectancy. The search kept the realistic Binance futures cost model and required materially usable frequency before holdout validation.
+
+Best new candidate:
+
+- Symbol/timeframe: SOLUSDT 1h
+- Family: momentum volume breakout
+- Core shape: Donchian 30 breakout, volume lookback 50 with 1.5x volume floor, 6-bar momentum >= 1%, EMA 20/80 trend state, 1.5 ATR stop, 0.8 ATR target, ATR trailing stop, breakeven enabled, 8-96 bar holding window, both long and short allowed
+- Validation: 2024-01-01 to 2025-06-01
+- Cost model: 5 bps taker fee per side, with 2 bps normal slippage and 10 bps deployment-stress slippage
+
+Comparison against the previous best:
+
+| Candidate | Tier | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Previous SOLUSDT 1h momentum volume breakout | 5 bps fee + 10 bps slippage | 284 | 80.3% | 4.40 | 4.45 | 0.258 | 0.414 | -0.376 | 1.09 | 1.22 | 1.22% | 2 | 3.85 |
+| New SOLUSDT 1h momentum volume breakout | 5 bps fee + 2 bps slippage | 245 | 84.1% | 4.21 | 5.12 | 0.420 | 0.621 | -0.642 | 0.97 | 2.10 | 2.09% | 2 | 3.32 |
+| New SOLUSDT 1h momentum volume breakout | 5 bps fee + 10 bps slippage | 245 | 82.4% | 3.82 | 4.22 | 0.344 | 0.549 | -0.619 | 0.90 | 2.26 | 2.24% | 2 | 3.32 |
+
+Execution-cost degradation for the new candidate:
+
+| Slippage / Side | Fee / Side | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 bps | 5 bps | 245 | 72.2% | 4.31 | 5.33 | 0.442 | 0.754 | -0.368 | 2.05 | 2.06 | 2.05% | 3 | 3.32 |
+| 2 bps | 5 bps | 245 | 84.1% | 4.21 | 5.12 | 0.420 | 0.621 | -0.642 | 0.97 | 2.10 | 2.09% | 2 | 3.32 |
+| 5 bps | 5 bps | 245 | 84.1% | 4.09 | 4.84 | 0.392 | 0.588 | -0.642 | 0.92 | 2.15 | 2.14% | 2 | 3.32 |
+| 10 bps | 5 bps | 245 | 82.4% | 3.82 | 4.22 | 0.344 | 0.549 | -0.619 | 0.90 | 2.26 | 2.24% | 2 | 3.32 |
+| 20 bps | 5 bps | 245 | 79.2% | 3.35 | 3.29 | 0.268 | 0.490 | -0.575 | 0.86 | 3.52 | 3.47% | 5 | 3.32 |
+| 30 bps | 5 bps | 245 | 74.3% | 2.92 | 2.66 | 0.211 | 0.461 | -0.509 | 0.92 | 3.92 | 3.86% | 5 | 3.32 |
+| 50 bps | 5 bps | 245 | 70.2% | 2.20 | 1.91 | 0.136 | 0.412 | -0.516 | 0.81 | 3.49 | 3.45% | 4 | 3.32 |
+
+Walk-forward aggregate from the fixed candidate:
+
+- 17 / 17 positive-expectancy three-month windows.
+- 746 total walk-forward trades.
+- Trade-weighted expectancy: 0.465R.
+- Mean win rate: 80.5%.
+- Weighted average win / loss: 0.743R / -0.631R.
+- Weighted payoff ratio: 1.14.
+- Max walk-forward drawdown: 2.67R / 2.64%.
+- Weighted frequency: 3.42 trades/week.
+
+Prop-firm evaluation under 5 bps fee + 10 bps slippage passed 60 / 63 implemented FTMO, The5ers, and FundedNext profile-risk combinations using closed-PnL daily-loss approximation. The failures were only at the lowest tested 0.10% risk for 8-10% target profiles where the target was not reached inside the evaluation window; higher risk tiers passed.
+
+A causal trade-filter search was also run on this candidate. It was rejected because filters that improved apparent expectancy became too sparse; the best filtered artifact had about 0.01 trades/week and 0 / 17 gate windows. The raw candidate is therefore the valid improvement.
+
+Current status: this supersedes the prior SOLUSDT 1h momentum-volume candidate when the priority is expectancy while keeping the rest of the profile broadly intact. It raises deployment-stress expectancy from 0.258R to 0.344R and win rate from 80.3% to 82.4%. The tradeoff is lower frequency, 3.85 to 3.32 trades/week, and higher but still low drawdown, 1.22R to 2.26R. It remains a research/paper-trade candidate, not a live-deployable system, until intrabar prop-firm daily-loss modeling and forward paper execution are added.
