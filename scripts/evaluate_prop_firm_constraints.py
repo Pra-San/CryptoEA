@@ -16,7 +16,12 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.explore_trailing_highwin_edge import PARAM_FIELDS, apply_strategy, load_data, simulate_trades, write_csv
+from scripts.explore_trailing_highwin_edge import PARAM_FIELDS as PARTIAL_FIELDS
+from scripts.explore_trailing_highwin_edge import apply_strategy as apply_partial_strategy
+from scripts.explore_trailing_highwin_edge import load_data, simulate_trades, write_csv
+from scripts.explore_vwap_volume_profile_edge import PARAM_FIELDS as VWAP_FIELDS
+from scripts.explore_vwap_volume_profile_edge import apply_strategy as apply_vwap_strategy
+from scripts.explore_vwap_volume_profile_edge import prepare_features as prepare_vwap_features
 
 
 BOOL_FIELDS = {
@@ -26,6 +31,7 @@ BOOL_FIELDS = {
     "move_stop_after_partial",
     "use_break_even",
     "use_mid_target",
+    "use_poc_target",
     "use_partial_exit",
     "use_trailing_stop",
 }
@@ -37,9 +43,14 @@ INT_FIELDS = {
     "ema_slow",
     "max_holding_bars",
     "min_holding_bars",
+    "mom_lookback",
+    "profile_lookback",
     "slope_bars",
     "volume_lookback",
+    "vwap_lookback",
 }
+
+STRING_FIELDS = {"family", "target_mode"}
 
 
 @dataclass(frozen=True)
@@ -66,6 +77,7 @@ PROFILES = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate a candidate against prop-firm constraints")
     parser.add_argument("--candidate-summary", type=Path, required=True)
+    parser.add_argument("--candidate-section", default="best", choices=["best", "best_validation_ranked"])
     parser.add_argument("--start", default="2024-01-01")
     parser.add_argument("--end", default="2025-06-01")
     parser.add_argument("--profile", action="append", choices=sorted(PROFILES), default=[])
@@ -78,9 +90,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def coerce_params(raw: dict[str, Any]) -> dict[str, Any]:
+def coerce_params(raw: dict[str, Any], fields: list[str]) -> dict[str, Any]:
     params: dict[str, Any] = {}
-    for field in PARAM_FIELDS:
+    for field in fields:
+        if field not in raw:
+            continue
         value = raw[field]
         if field in BOOL_FIELDS:
             if isinstance(value, str):
@@ -89,17 +103,20 @@ def coerce_params(raw: dict[str, Any]) -> dict[str, Any]:
                 params[field] = bool(value)
         elif field in INT_FIELDS:
             params[field] = int(value)
-        elif field == "family":
+        elif field in STRING_FIELDS:
             params[field] = str(value)
         else:
             params[field] = float(value)
     return params
 
 
-def load_candidate(path: Path) -> tuple[str, str, dict[str, Any]]:
+def load_candidate(path: Path, section: str) -> tuple[str, str, str, dict[str, Any]]:
     data = json.loads(path.read_text())
-    best = data["best"]
-    return str(data["symbol"]), str(data["timeframe"]), coerce_params(best)
+    best = data.get(section) or data["best"]
+    strategy = str(data.get("strategy", ""))
+    fields = VWAP_FIELDS if strategy == "vwap_volume_profile_momentum_search" else PARTIAL_FIELDS
+    candidate_name = f"{section}:{best.get('family', best.get('strategy', 'candidate'))}"
+    return str(data["symbol"]), str(data["timeframe"]), strategy, candidate_name, coerce_params(best, fields)
 
 
 def day_key(ts: Any, boundary_hour_utc: int) -> pd.Timestamp:
@@ -184,11 +201,19 @@ def main() -> None:
     args = parse_args()
     profiles = [PROFILES[name] for name in args.profile] if args.profile else list(PROFILES.values())
     risk_values = [float(item) for item in args.risk_grid.split(",") if item.strip()]
-    symbol, timeframe, params = load_candidate(args.candidate_summary)
+    symbol, timeframe, strategy, candidate_name, params = load_candidate(args.candidate_summary, args.candidate_section)
     base = load_data(symbol, timeframe, args.start, args.end)
-    featured = apply_strategy(base, params)
+    if strategy == "vwap_volume_profile_momentum_search":
+        featured = apply_vwap_strategy(prepare_vwap_features(base, params, {}), params)
+    else:
+        featured = apply_partial_strategy(base, params)
     output_root = args.output_dir if args.output_dir.is_absolute() else PROJECT_ROOT / args.output_dir
-    run_dir = output_root / f"propfirm_eval_{symbol}_{timeframe}_{pd.Timestamp.now('UTC'):%Y%m%d_%H%M%S}"
+    fee_bps = int(round(args.fee_rate * 10_000))
+    slip_bps = int(round(args.slippage_rate * 10_000))
+    timestamp = pd.Timestamp.now("UTC").strftime("%Y%m%d_%H%M%S_%f")
+    run_dir = output_root / (
+        f"propfirm_eval_{symbol}_{timeframe}_{args.candidate_section}_fee{fee_bps}bps_slip{slip_bps}bps_{timestamp}"
+    )
     run_dir.mkdir(parents=True, exist_ok=True)
 
     rows: list[dict[str, Any]] = []
@@ -216,6 +241,9 @@ def main() -> None:
         "candidate_summary": str(args.candidate_summary),
         "symbol": symbol,
         "timeframe": timeframe,
+        "strategy": strategy,
+        "candidate_section": args.candidate_section,
+        "candidate_name": candidate_name,
         "start": args.start,
         "end": args.end,
         "profiles": [asdict(profile) for profile in profiles],
