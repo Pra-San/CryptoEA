@@ -74,6 +74,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sizing-mode", choices=["risk_based", "fixed_notional"], default="risk_based")
     parser.add_argument("--fee-rate", type=float, default=0.0010)
     parser.add_argument("--slippage-rate", type=float, default=0.0020)
+    parser.add_argument("--train-slippage-rate", type=float, default=None)
+    parser.add_argument("--stress-slippage-rate", type=float, default=None)
     parser.add_argument("--min-total-trades", type=int, default=20)
     parser.add_argument("--min-validation-trades", type=int, default=8)
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "research" / "optimization")
@@ -198,13 +200,14 @@ def run_metrics(
     symbol: str,
     args: argparse.Namespace,
     params: dict[str, Any],
+    slippage_rate: float | None = None,
 ) -> dict[str, Any]:
     if len(featured) < int(params["max_holding_bars"]) + 5:
         return BacktestMetrics().to_dict(BacktestMetrics().calculate(SimpleNamespace(trades=[])))
     config = VectorizedBacktestConfig(
         initial_balance=args.balance,
         fee_rate=args.fee_rate,
-        slippage_rate=args.slippage_rate,
+        slippage_rate=args.slippage_rate if slippage_rate is None else slippage_rate,
         risk_per_trade=args.risk_per_trade,
         max_position_pct=args.max_position_pct,
         sizing_mode=args.sizing_mode,
@@ -267,12 +270,16 @@ def aggregate_score(window_metrics: list[dict[str, Any]], min_total_trades: int)
 
 
 def validation_rank(row: dict[str, Any], min_validation_trades: int) -> float:
-    if int(row.get("validation_total_trades", 0)) < min_validation_trades:
-        return -1_000_000 + int(row.get("validation_total_trades", 0))
+    prefix = "stress" if "stress_total_trades" in row else "validation"
+    if int(row.get(f"{prefix}_total_trades", 0)) < min_validation_trades:
+        return -1_000_000 + int(row.get(f"{prefix}_total_trades", 0))
     return (
-        float(row.get("validation_expectancy_r", 0)) * 130
-        + min(float(row.get("validation_profit_factor", 0)), 4.0) * 22
-        - float(row.get("validation_max_drawdown_r", 0)) * 2.8
+        float(row.get(f"{prefix}_win_rate", 0)) * 80
+        + float(row.get(f"{prefix}_expectancy_r", 0)) * 160
+        + min(float(row.get(f"{prefix}_profit_factor", 0)), 6.0) * 26
+        + min(float(row.get(f"{prefix}_sharpe_ratio", 0)), 6.0) * 8
+        - float(row.get(f"{prefix}_max_drawdown_r", 0)) * 3.2
+        - float(row.get(f"{prefix}_max_consecutive_losses", 0)) * 5.0
         + float(row.get("wf_score", 0)) * 0.45
     )
 
@@ -305,6 +312,8 @@ def main() -> None:
     train_windows = list(walk_forward_windows(args.start, args.train_end, args.train_months, args.test_months))
     validation_start = pd.Timestamp(args.validation_start, tz="UTC")
     validation_end = pd.Timestamp(args.validation_end, tz="UTC")
+    train_slippage = args.slippage_rate if args.train_slippage_rate is None else args.train_slippage_rate
+    stress_slippage = args.slippage_rate if args.stress_slippage_rate is None else args.stress_slippage_rate
     rng = np.random.default_rng(args.seed)
 
     rows: list[dict[str, Any]] = []
@@ -318,6 +327,7 @@ def main() -> None:
                 args.symbol,
                 args,
                 params,
+                train_slippage,
             )
             for _, _, test_start, test_end in train_windows
         ]
@@ -358,8 +368,17 @@ def main() -> None:
             args.symbol,
             args,
             params,
+            args.slippage_rate,
+        )
+        stress = run_metrics(
+            featured.loc[(featured.index >= validation_start) & (featured.index <= validation_end)],
+            args.symbol,
+            args,
+            params,
+            stress_slippage,
         )
         row.update(prefixed("validation", validation))
+        row.update(prefixed("stress", stress))
         row["deploy_score"] = validation_rank(row, args.min_validation_trades)
 
     if args.selection_mode == "deploy":
@@ -380,6 +399,7 @@ def main() -> None:
             args.symbol,
             args,
             best_params,
+            train_slippage,
         )
         wf_rows.append({
             "window": i,
@@ -408,6 +428,8 @@ def main() -> None:
         "costs": {
             "fee_rate": args.fee_rate,
             "slippage_rate": args.slippage_rate,
+            "train_slippage_rate": train_slippage,
+            "stress_slippage_rate": stress_slippage,
             "risk_per_trade": args.risk_per_trade,
             "max_position_pct": args.max_position_pct,
             "sizing_mode": args.sizing_mode,

@@ -107,6 +107,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fee-rate", type=float, default=0.0010)
     parser.add_argument("--slippage-rate", type=float, default=0.0002)
     parser.add_argument("--stress-slippage-rate", type=float, default=0.0010)
+    parser.add_argument(
+        "--train-slippage-rate",
+        type=float,
+        default=None,
+        help="Optional slippage rate for walk-forward training score; defaults to --slippage-rate.",
+    )
     parser.add_argument("--min-train-trades", type=int, default=120)
     parser.add_argument("--min-validation-trades", type=int, default=80)
     parser.add_argument("--min-trades-per-week", type=float, default=1.5)
@@ -412,6 +418,7 @@ def main() -> None:
     rng = np.random.default_rng(args.seed)
     rows: list[dict[str, Any]] = []
     profile_cache: dict[tuple[int, float], pd.DataFrame] = {}
+    training_slippage = args.slippage_rate if args.train_slippage_rate is None else args.train_slippage_rate
 
     logger.info("Searching %d VWAP/profile/momentum candidates", args.trials)
     for trial in range(args.trials):
@@ -419,7 +426,13 @@ def main() -> None:
         prepared = prepare_features(base, params, profile_cache)
         featured = apply_strategy(prepared, params)
         metrics = [
-            run_metrics(featured.loc[(featured.index >= test_start) & (featured.index <= test_end)], args.symbol, args, params)
+            run_metrics(
+                featured.loc[(featured.index >= test_start) & (featured.index <= test_end)],
+                args.symbol,
+                args,
+                params,
+                training_slippage,
+            )
             for _, _, test_start, test_end in train_windows
         ]
         wf_score, aggregate = aggregate_score(metrics, args)
@@ -504,6 +517,7 @@ def main() -> None:
             "fee_rate": args.fee_rate,
             "slippage_rate": args.slippage_rate,
             "stress_slippage_rate": args.stress_slippage_rate,
+            "train_slippage_rate": training_slippage,
             "risk_per_trade": args.risk_per_trade,
             "max_position_pct": args.max_position_pct,
         },

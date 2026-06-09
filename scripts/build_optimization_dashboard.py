@@ -93,7 +93,7 @@ def summarize_best(path: Path) -> dict[str, Any]:
         "summary_file": str(path.relative_to(OPT_ROOT)),
         "symbol": data.get("symbol"),
         "timeframe": data.get("timeframe"),
-        "family": best.get("family", "v3"),
+        "family": best.get("family") or data.get("strategy", "v3"),
         "trial": best.get("trial"),
         "trials": data.get("trials"),
         "seed": data.get("seed"),
