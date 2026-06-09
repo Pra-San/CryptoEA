@@ -100,6 +100,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test-months", type=int, default=3)
     parser.add_argument("--trials", type=int, default=1200)
     parser.add_argument("--top", type=int, default=160)
+    parser.add_argument("--families", nargs="*", choices=FAMILIES, default=None)
     parser.add_argument("--seed", type=int, default=20260609)
     parser.add_argument("--balance", type=float, default=100000.0)
     parser.add_argument("--risk-per-trade", type=float, default=0.01)
@@ -161,8 +162,9 @@ def profile_features(df: pd.DataFrame, lookback: int, value_area: float) -> pd.D
     return pd.DataFrame({"profile_poc": poc, "profile_val": val, "profile_vah": vah}, index=df.index)
 
 
-def sample_params(rng: np.random.Generator, trial: int) -> dict[str, Any]:
-    family = FAMILIES[trial % len(FAMILIES)] if trial < len(FAMILIES) else str(rng.choice(FAMILIES))
+def sample_params(rng: np.random.Generator, trial: int, families: list[str] | None = None) -> dict[str, Any]:
+    search_families = families or FAMILIES
+    family = search_families[trial % len(search_families)] if trial < len(search_families) else str(rng.choice(search_families))
     side_mode = str(rng.choice(["long_only", "both", "short_only"], p=[0.72, 0.24, 0.04]))
     ema_fast = int(rng.choice([8, 10, 14, 20, 30, 50]))
     ema_slow = int(rng.choice([80, 100, 150, 200, 300, 400]))
@@ -412,6 +414,7 @@ def main() -> None:
     run_dir = output_root / f"vwap_profile_{args.symbol}_{args.timeframe}_{time.strftime('%Y%m%d_%H%M%S')}"
     run_dir.mkdir(parents=True, exist_ok=True)
     base = load_data(args.symbol, args.timeframe, args.start, args.validation_end)
+    families = args.families or FAMILIES
     train_windows = list(walk_forward_windows(args.start, args.train_end, args.train_months, args.test_months))
     val_start = pd.Timestamp(args.validation_start, tz="UTC")
     val_end = pd.Timestamp(args.validation_end, tz="UTC")
@@ -422,7 +425,7 @@ def main() -> None:
 
     logger.info("Searching %d VWAP/profile/momentum candidates", args.trials)
     for trial in range(args.trials):
-        params = sample_params(rng, trial)
+        params = sample_params(rng, trial, families)
         prepared = prepare_features(base, params, profile_cache)
         featured = apply_strategy(prepared, params)
         metrics = [
