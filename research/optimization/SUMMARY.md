@@ -399,3 +399,50 @@ Walk-forward result at 5 bps fee + 10 bps slippage: 17 / 17 positive windows, 52
 Prop-firm evaluation: the profile breakout passed the implemented FTMO, The5ers, and FundedNext profile-risk combinations under both 2 bps and 10 bps slippage tiers, using the closed-PnL daily-loss approximation. This still needs intrabar mark-to-market daily-loss checks before challenge deployment.
 
 Current status: SOLUSDT 1h profile breakout is now the best candidate. It is not guaranteed live-deployable, but it has the first genuinely strong combination of win rate, PF, expectancy, low R drawdown, positive walk-forward coverage, and acceptable weekly trade frequency under a defensible Binance futures cost model.
+
+## Fifteenth-Pass Frequency And Expectancy Focus
+
+The realistic-cost VWAP/profile explorer was rerun with a focused family selector so trials could concentrate on the families that had already survived the corrected execution model: profile breakout, VWAP/profile confluence, momentum/volume breakout, daily VWAP pullback, and VWAP band reversion.
+
+Best new candidate:
+
+- Symbol/timeframe: SOLUSDT 1h
+- Family: momentum volume breakout
+- Core shape: Donchian 16 breakout, volume lookback 50, momentum lookback 18, EMA 20/200 trend state, 2.5 ATR stop, 12 ATR target, 8-36 bar holding window, trailing stop enabled, both long and short allowed
+- Validation: 2024-01-01 to 2025-06-01
+- Cost model: 5 bps taker fee per side, with 2 bps normal slippage and 10 bps deployment-stress slippage
+
+Comparison against the previous best realistic-cost SOL profile breakout:
+
+| Candidate | Tier | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Previous SOLUSDT 1h profile breakout | 5 bps fee + 10 bps slippage | 184 | 78.8% | 3.72 | 3.88 | 0.193 | 0.331 | -0.320 | 1.04 | 1.39 | 1.38% | 3 | 2.49 |
+| New SOLUSDT 1h momentum volume breakout | 5 bps fee + 2 bps slippage | 284 | 82.7% | 4.79 | 5.59 | 0.307 | 0.451 | -0.384 | 1.17 | 1.04 | 1.04% | 2 | 3.85 |
+| New SOLUSDT 1h momentum volume breakout | 5 bps fee + 10 bps slippage | 284 | 80.3% | 4.40 | 4.45 | 0.258 | 0.414 | -0.376 | 1.09 | 1.22 | 1.22% | 2 | 3.85 |
+
+Execution-cost degradation for the new candidate:
+
+| Slippage / Side | Fee / Side | Trades | Win Rate | Sharpe | PF | Exp R | Avg Win R | Avg Loss R | RR | Max DD R | Max DD % | Max Losses | Trades/Week |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 bps | 5 bps | 283 | 70.3% | 4.88 | 5.85 | 0.321 | 0.550 | -0.220 | 2.47 | 1.04 | 1.04% | 4 | 3.83 |
+| 2 bps | 5 bps | 284 | 82.7% | 4.79 | 5.59 | 0.307 | 0.451 | -0.384 | 1.17 | 1.04 | 1.04% | 2 | 3.85 |
+| 5 bps | 5 bps | 284 | 82.7% | 4.68 | 5.28 | 0.290 | 0.431 | -0.388 | 1.10 | 1.05 | 1.05% | 2 | 3.85 |
+| 10 bps | 5 bps | 284 | 80.3% | 4.40 | 4.45 | 0.258 | 0.414 | -0.376 | 1.09 | 1.22 | 1.22% | 2 | 3.85 |
+| 20 bps | 5 bps | 284 | 77.5% | 3.89 | 3.42 | 0.208 | 0.378 | -0.380 | 0.99 | 1.87 | 1.86% | 3 | 3.85 |
+| 30 bps | 5 bps | 284 | 74.6% | 3.34 | 2.65 | 0.163 | 0.351 | -0.390 | 0.90 | 3.15 | 3.12% | 4 | 3.85 |
+| 50 bps | 5 bps | 284 | 71.8% | 2.52 | 1.93 | 0.107 | 0.310 | -0.411 | 0.76 | 3.83 | 3.80% | 4 | 3.85 |
+
+Walk-forward aggregate from the fixed candidate:
+
+- 17 / 17 positive-expectancy three-month windows.
+- 767 total walk-forward trades.
+- Trade-weighted expectancy: 0.368R.
+- Mean win rate: 80.8%.
+- Weighted average win / loss: 0.549R / -0.388R.
+- Weighted payoff ratio: 1.39.
+- Max walk-forward drawdown: 2.02R / 2.01%.
+- Weighted frequency: 3.58 trades/week.
+
+Prop-firm evaluation under 5 bps fee + 10 bps slippage passed all implemented FTMO, The5ers, and FundedNext profiles in the tested risk grid using closed-PnL daily-loss approximation. The lowest passing risks were 0.10% for 5% targets and 0.15% for 8-10% targets; larger risk settings also passed in the current closed-PnL model.
+
+Current status: this supersedes the SOLUSDT 1h profile breakout as the best candidate so far. It improves validation trade count by 54%, deployment-stress expectancy by 34%, trades/week by 54%, win rate, Sharpe, PF, max R drawdown, percent drawdown, and max loss streak. It is the first candidate that looks close to the originally requested table under a defensible Binance futures cost model. It still needs forward paper trading and intrabar mark-to-market daily-loss simulation before real prop-firm or live deployment.
