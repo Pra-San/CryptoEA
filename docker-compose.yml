@@ -1,0 +1,39 @@
+services:
+  strategy-demo:
+    build: .
+    image: cryptoea:latest
+    command: ["python", "scripts/deploy_sol_momentum.py", "--mode", "demo"]
+    env_file:
+      - .env
+    environment:
+      CRYPTOEA_MODE: demo
+    volumes:
+      - ./runtime:/app/runtime
+      - ./research:/app/research:ro
+    restart: unless-stopped
+
+  shadow-backtest-demo:
+    image: cryptoea:latest
+    build: .
+    command: ["python", "scripts/shadow_backtest_demo.py"]
+    env_file:
+      - .env
+    volumes:
+      - ./runtime:/app/runtime
+      - ./research:/app/research:ro
+    restart: unless-stopped
+    depends_on:
+      - strategy-demo
+
+  strategy-live:
+    image: cryptoea:latest
+    build: .
+    profiles: ["live"]
+    command: ["python", "scripts/deploy_sol_momentum.py", "--mode", "live", "--exchange", "mainnet"]
+    env_file:
+      - .env
+    volumes:
+      - ./runtime:/app/runtime
+      - ./research:/app/research:ro
+    restart: "no"
+
