@@ -113,7 +113,12 @@ def manage_position(
     old_stop = position.stop_loss
 
     def close_out(price: float, reason: str) -> None:
-        broker.close_position(position, price, reason)
+        final_reason = f"partial_then_{reason}" if position.partial_taken else reason
+        broker.close_position(position, price, final_reason)
+
+    partial_target = position.entry_price + position.signal * float(runtime.params["partial_exit_atr"]) * position.entry_atr
+    partial_fraction = min(max(float(runtime.params["partial_exit_fraction"]), 0.0), 0.95)
+    stop_order_refresh_needed = False
 
     if position.signal > 0:
         if low <= position.stop_loss and position.bars_held >= min_hold:
@@ -124,6 +129,16 @@ def manage_position(
             position.stop_loss = max(position.stop_loss, fee_break_even(position, runtime.fee_rate, runtime.slippage_rate))
         if runtime.params.get("use_trailing_stop"):
             position.stop_loss = max(position.stop_loss, position.best_price - float(runtime.params["trail_atr_mult"]) * position.entry_atr)
+        if (
+            runtime.params.get("use_partial_exit")
+            and not position.partial_taken
+            and high >= partial_target
+            and position.bars_held >= min_hold
+        ):
+            broker.partial_close_position(position, partial_target, partial_fraction, "partial_exit", rules)
+            stop_order_refresh_needed = True
+            if runtime.params.get("move_stop_after_partial"):
+                position.stop_loss = max(position.stop_loss, fee_break_even(position, runtime.fee_rate, runtime.slippage_rate))
         if position.take_profit is not None and high >= position.take_profit and position.bars_held >= min_hold:
             close_out(position.take_profit, "take_profit")
             return None
@@ -136,6 +151,16 @@ def manage_position(
             position.stop_loss = min(position.stop_loss, fee_break_even(position, runtime.fee_rate, runtime.slippage_rate))
         if runtime.params.get("use_trailing_stop"):
             position.stop_loss = min(position.stop_loss, position.best_price + float(runtime.params["trail_atr_mult"]) * position.entry_atr)
+        if (
+            runtime.params.get("use_partial_exit")
+            and not position.partial_taken
+            and low <= partial_target
+            and position.bars_held >= min_hold
+        ):
+            broker.partial_close_position(position, partial_target, partial_fraction, "partial_exit", rules)
+            stop_order_refresh_needed = True
+            if runtime.params.get("move_stop_after_partial"):
+                position.stop_loss = min(position.stop_loss, fee_break_even(position, runtime.fee_rate, runtime.slippage_rate))
         if position.take_profit is not None and low <= position.take_profit and position.bars_held >= min_hold:
             close_out(position.take_profit, "take_profit")
             return None
@@ -149,7 +174,7 @@ def manage_position(
     if position.bars_held >= max_hold:
         close_out(close, "max_hold")
         return None
-    if abs(position.stop_loss - old_stop) > 1e-12:
+    if stop_order_refresh_needed or abs(position.stop_loss - old_stop) > 1e-12:
         broker.update_stop(position, position.stop_loss, rules)
     return position
 

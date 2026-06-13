@@ -38,6 +38,38 @@ services:
       - ./data:/app/data:ro
     restart: "no"
 
+  live-path-validation-replay:
+    image: cryptoea:latest
+    build: .
+    profiles: ["test"]
+    command:
+      [
+        "python",
+        "scripts/replay_deployment_proxy.py",
+        "--source",
+        "local",
+        "--data-start",
+        "2020-01-01",
+        "--data-end",
+        "2025-06-01",
+        "--eval-start",
+        "2024-01-01",
+        "--eval-end",
+        "2025-06-01",
+        "--engine",
+        "both",
+        "--output-dir",
+        "runtime/replay_proxy_validation_live",
+        "--fail-on-mismatch",
+      ]
+    env_file:
+      - .env
+    volumes:
+      - ./runtime:/app/runtime
+      - ./research:/app/research:ro
+      - ./data:/app/data:ro
+    restart: "no"
+
   strategy-live:
     image: cryptoea:latest
     build: .

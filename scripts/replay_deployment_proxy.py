@@ -10,7 +10,6 @@ import logging
 import os
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import pandas as pd
@@ -20,8 +19,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from data.loader import DataLoader
 from deployment.binance_futures import BinanceFuturesClient
+from deployment.live_replay import live_replay_metrics
 from deployment.replay_engine import ReplayConfig, replay_metrics
 from deployment.strategy_runtime import CandidateRuntime
+from scripts.explore_high_winrate_edge import trades_per_week
+from scripts.explore_trailing_highwin_edge import simulate_trades
 from scripts.explore_trailing_highwin_edge import metrics_from_trades
 
 logger = logging.getLogger("replay_deployment_proxy")
@@ -44,6 +46,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kline-limit", type=int, default=int(os.getenv("KLINE_LIMIT", "600")))
     parser.add_argument("--start", default=os.getenv("REPLAY_START", "2024-01-01"))
     parser.add_argument("--end", default=os.getenv("REPLAY_END", "2025-06-01"))
+    parser.add_argument("--data-start", default=os.getenv("REPLAY_DATA_START"))
+    parser.add_argument("--data-end", default=os.getenv("REPLAY_DATA_END"))
+    parser.add_argument("--eval-start", default=os.getenv("REPLAY_EVAL_START"))
+    parser.add_argument("--eval-end", default=os.getenv("REPLAY_EVAL_END"))
+    parser.add_argument("--engine", choices=["model", "live", "both"], default=os.getenv("REPLAY_ENGINE", "model"))
     parser.add_argument("--quantity-mode", choices=["exact", "rounded"], default="exact")
     parser.add_argument("--fail-on-mismatch", action="store_true")
     parser.add_argument("--log-level", default=os.getenv("LOG_LEVEL", "INFO"))
@@ -58,9 +65,17 @@ def load_raw(args: argparse.Namespace, runtime: CandidateRuntime) -> pd.DataFram
     raw = loader.load_symbol(runtime.symbol, "1m")
     if raw.index.tz is None:
         raw = raw.tz_localize("UTC")
-    start = pd.Timestamp(args.start, tz="UTC")
-    end = pd.Timestamp(args.end, tz="UTC")
+    start = pd.Timestamp(args.data_start or args.start, tz="UTC")
+    end = pd.Timestamp(args.data_end or args.end, tz="UTC")
     return raw.loc[(raw.index >= start) & (raw.index <= end), ["open", "high", "low", "close", "volume"]]
+
+
+def evaluation_slice(featured: pd.DataFrame, args: argparse.Namespace) -> pd.DataFrame:
+    if args.source != "local" and not (args.eval_start or args.eval_end):
+        return featured
+    start = pd.Timestamp(args.eval_start or args.start, tz="UTC")
+    end = pd.Timestamp(args.eval_end or args.end, tz="UTC")
+    return featured.loc[(featured.index >= start) & (featured.index <= end)]
 
 
 def write_trades(path: Path, trades: list[object]) -> None:
@@ -105,6 +120,14 @@ def max_trade_delta(a: list[object], b: list[object], field: str) -> float:
         except (TypeError, ValueError):
             values.append(float("inf"))
     return max(values) if values else 0.0
+
+
+def backtest_from_featured(featured: pd.DataFrame, runtime: CandidateRuntime, balance: float) -> tuple[list[object], dict[str, Any]]:
+    args = runtime.args(balance=balance)
+    trades = simulate_trades(featured, runtime.symbol, args, runtime.params, runtime.slippage_rate)
+    metrics = metrics_from_trades(trades, featured.index, args.balance)
+    metrics["trades_per_week"] = trades_per_week(metrics)
+    return trades, metrics
 
 
 def compare(backtest_trades: list[object], replay_trades: list[object], backtest_metrics: dict[str, Any], replay_metrics_data: dict[str, Any]) -> dict[str, Any]:
@@ -154,47 +177,71 @@ def main() -> None:
         max_position_pct=args.max_position_pct,
     )
     raw = load_raw(args, runtime)
-    featured = runtime.feature_frame(raw)
-    backtest_trades, backtest_metrics = runtime.backtest_snapshot(raw, balance=args.balance)
+    featured_all = runtime.feature_frame(raw)
+    featured = evaluation_slice(featured_all, args)
+    backtest_trades, backtest_metrics = backtest_from_featured(featured, runtime, args.balance)
     config = ReplayConfig(exact_quantity=args.quantity_mode == "exact")
-    replay_trades, replay_metrics_data = replay_metrics(featured, runtime, config=config)
-    comparison = compare(backtest_trades, replay_trades, backtest_metrics, replay_metrics_data)
+    replay_trades = []
+    live_trades = []
+    replay_metrics_data: dict[str, Any] = {}
+    live_metrics_data: dict[str, Any] = {}
+    comparisons: dict[str, Any] = {}
+    if args.engine in {"model", "both"}:
+        replay_trades, replay_metrics_data = replay_metrics(featured, runtime, config=config)
+        comparisons["model"] = compare(backtest_trades, replay_trades, backtest_metrics, replay_metrics_data)
+    if args.engine in {"live", "both"}:
+        live_trades, live_metrics_data = live_replay_metrics(featured, runtime)
+        comparisons["live"] = compare(backtest_trades, live_trades, backtest_metrics, live_metrics_data)
+    primary = "live" if args.engine == "live" else "model"
+    comparison = comparisons[primary]
     result = {
         "generated_at": pd.Timestamp.now("UTC").isoformat(),
         "source": args.source,
         "exchange": args.exchange if args.source == "binance" else None,
+        "engine": args.engine,
         "candidate": runtime.name,
         "symbol": runtime.symbol,
         "timeframe": runtime.timeframe,
         "raw_start": raw.index[0].isoformat() if len(raw) else None,
         "raw_end": raw.index[-1].isoformat() if len(raw) else None,
+        "feature_warmup_start": featured_all.index[0].isoformat() if len(featured_all) else None,
+        "feature_warmup_end": featured_all.index[-1].isoformat() if len(featured_all) else None,
         "featured_start": featured.index[0].isoformat() if len(featured) else None,
         "featured_end": featured.index[-1].isoformat() if len(featured) else None,
         "backtest_metrics": backtest_metrics,
         "replay_metrics": replay_metrics_data,
+        "live_replay_metrics": live_metrics_data,
         "comparison": comparison,
+        "comparisons": comparisons,
         "backtest_trades_head": trade_rows(backtest_trades[:5]),
         "replay_trades_head": trade_rows(replay_trades[:5]),
+        "live_replay_trades_head": trade_rows(live_trades[:5]),
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_trades(args.output_dir / "backtest_trades.csv", backtest_trades)
-    write_trades(args.output_dir / "replay_trades.csv", replay_trades)
+    if replay_trades:
+        write_trades(args.output_dir / "replay_trades.csv", replay_trades)
+    if live_trades:
+        write_trades(args.output_dir / "live_replay_trades.csv", live_trades)
     (args.output_dir / "comparison.json").write_text(json.dumps(result, indent=2, sort_keys=True, default=str))
     logger.info(
-        "Replay parity source=%s backtest=%s replay=%s mismatch=%s expR %.6f/%.6f PF %.6f/%.6f",
+        "Replay parity source=%s engine=%s backtest=%s replay=%s mismatch=%s expR %.6f/%.6f PF %.6f/%.6f",
         args.source,
+        args.engine,
         len(backtest_trades),
-        len(replay_trades),
+        comparison["replay_trade_count"],
         comparison["mismatch_count"],
         float(backtest_metrics.get("expectancy_r", 0) or 0),
-        float(replay_metrics_data.get("expectancy_r", 0) or 0),
+        float((live_metrics_data if primary == "live" else replay_metrics_data).get("expectancy_r", 0) or 0),
         float(backtest_metrics.get("profit_factor", 0) or 0),
-        float(replay_metrics_data.get("profit_factor", 0) or 0),
+        float((live_metrics_data if primary == "live" else replay_metrics_data).get("profit_factor", 0) or 0),
     )
-    if args.fail_on_mismatch and (not comparison["trade_count_match"] or comparison["mismatch_count"] > 0):
+    if args.fail_on_mismatch and any(
+        not item["trade_count_match"] or item["mismatch_count"] > 0
+        for item in comparisons.values()
+    ):
         raise SystemExit(1)
 
 
 if __name__ == "__main__":
     main()
-

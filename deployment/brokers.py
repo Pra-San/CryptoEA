@@ -37,6 +37,8 @@ class RuntimePosition:
     bars_held: int = 0
     best_price: float = 0.0
     realized_pnl: float = 0.0
+    remaining_quantity: float = 0.0
+    partial_taken: bool = False
     protective_order_id: str | None = None
     last_managed_bar: str | None = None
 
@@ -48,6 +50,9 @@ class Broker(Protocol):
         ...
 
     def close_position(self, position: RuntimePosition, price: float, reason: str) -> RuntimePosition:
+        ...
+
+    def partial_close_position(self, position: RuntimePosition, price: float, fraction: float, reason: str, rules: SymbolRules) -> RuntimePosition:
         ...
 
     def update_stop(self, position: RuntimePosition, new_stop: float, rules: SymbolRules) -> None:
@@ -138,17 +143,21 @@ class DemoBroker:
             slippage=abs(entry - price) * quantity,
             best_price=entry,
             realized_pnl=-fee,
+            remaining_quantity=quantity,
         )
         self._persist_open(position)
         return position
 
     def close_position(self, position: RuntimePosition, price: float, reason: str) -> RuntimePosition:
+        close_qty = position.remaining_quantity if position.remaining_quantity > 0 else position.quantity
         exit_price = price * (1 - self.slippage_rate * position.signal)
-        exit_fee = exit_price * position.quantity * self.fee_rate
-        gross = (exit_price - position.entry_price) * position.quantity * position.signal
+        exit_fee = exit_price * close_qty * self.fee_rate
+        gross = (exit_price - position.entry_price) * close_qty * position.signal
         pnl = position.realized_pnl + gross - exit_fee
         position.fees += exit_fee
-        position.slippage += abs(exit_price - price) * position.quantity
+        position.slippage += abs(exit_price - price) * close_qty
+        position.realized_pnl = pnl
+        position.remaining_quantity = 0.0
         self.balance += gross - exit_fee
         payload = asdict(position)
         payload.update({
@@ -160,9 +169,39 @@ class DemoBroker:
             "exit_reason": reason,
             "status": "CLOSED",
             "opened_at": position.entry_time,
+            "strategy_exit_bar": position.last_managed_bar,
+            "holding_bars": position.bars_held,
         })
         self.store.upsert_trade(position.trade_id, payload)
         self.store.event("demo_exit", payload)
+        return position
+
+    def partial_close_position(self, position: RuntimePosition, price: float, fraction: float, reason: str, rules: SymbolRules) -> RuntimePosition:
+        if position.partial_taken:
+            return position
+        close_qty = min(position.remaining_quantity, position.quantity * fraction)
+        if close_qty <= 0:
+            return position
+        exit_price = price * (1 - self.slippage_rate * position.signal)
+        exit_fee = exit_price * close_qty * self.fee_rate
+        gross = (exit_price - position.entry_price) * close_qty * position.signal
+        position.realized_pnl += gross - exit_fee
+        position.fees += exit_fee
+        position.slippage += abs(exit_price - price) * close_qty
+        position.remaining_quantity -= close_qty
+        position.partial_taken = True
+        self.balance += gross - exit_fee
+        payload = asdict(position)
+        payload.update({
+            "status": "OPEN",
+            "opened_at": position.entry_time,
+            "partial_exit_price": exit_price,
+            "partial_exit_quantity": close_qty,
+            "partial_exit_reason": reason,
+            "partial_exit_bar": position.last_managed_bar,
+        })
+        self.store.upsert_trade(position.trade_id, payload)
+        self.store.event("demo_partial_exit", payload)
         return position
 
     def update_stop(self, position: RuntimePosition, new_stop: float, rules: SymbolRules) -> None:
@@ -251,6 +290,7 @@ class LiveBinanceBroker:
             slippage=abs(fill_price - price) * float(rounded),
             best_price=fill_price,
             realized_pnl=-(float(rounded) * fill_price * self.fee_rate),
+            remaining_quantity=float(rounded),
         )
         self.update_stop(position, position.stop_loss, rules)
         payload = asdict(position)
@@ -261,6 +301,7 @@ class LiveBinanceBroker:
 
     def close_position(self, position: RuntimePosition, price: float, reason: str) -> RuntimePosition:
         side = "SELL" if position.signal > 0 else "BUY"
+        close_qty = position.remaining_quantity if position.remaining_quantity > 0 else position.quantity
         try:
             self.client.cancel_all_orders(position.symbol)
         except Exception as exc:
@@ -269,14 +310,18 @@ class LiveBinanceBroker:
             symbol=position.symbol,
             side=side,
             order_type="MARKET",
-            quantity=Decimal(str(position.quantity)),
+            quantity=Decimal(str(close_qty)),
             reduce_only=True,
             client_order_id=f"{position.trade_id}-CLOSE",
         )
         fill_price = float(response.get("avgPrice") or response.get("price") or price)
-        gross = (fill_price - position.entry_price) * position.quantity * position.signal
-        exit_fee = fill_price * position.quantity * self.fee_rate
+        gross = (fill_price - position.entry_price) * close_qty * position.signal
+        exit_fee = fill_price * close_qty * self.fee_rate
         pnl = position.realized_pnl + gross - exit_fee
+        position.fees += exit_fee
+        position.slippage += abs(fill_price - price) * close_qty
+        position.realized_pnl = pnl
+        position.remaining_quantity = 0.0
         payload = asdict(position)
         payload.update({
             "closed_at": str(pd_now()),
@@ -288,15 +333,58 @@ class LiveBinanceBroker:
             "exit_order": response,
             "status": "CLOSED",
             "opened_at": position.entry_time,
+            "strategy_exit_bar": position.last_managed_bar,
+            "holding_bars": position.bars_held,
         })
         self.store.upsert_trade(position.trade_id, payload)
         self.store.event("live_exit", payload)
         return position
 
+    def partial_close_position(self, position: RuntimePosition, price: float, fraction: float, reason: str, rules: SymbolRules) -> RuntimePosition:
+        if position.partial_taken:
+            return position
+        side = "SELL" if position.signal > 0 else "BUY"
+        close_qty = min(position.remaining_quantity, position.quantity * fraction)
+        rounded_qty = rules.round_quantity(close_qty)
+        if rounded_qty <= 0:
+            return position
+        response = self.client.new_order(
+            symbol=position.symbol,
+            side=side,
+            order_type="MARKET",
+            quantity=rounded_qty,
+            reduce_only=True,
+            client_order_id=f"{position.trade_id}-PART",
+        )
+        fill_price = float(response.get("avgPrice") or response.get("price") or price)
+        closed = float(rounded_qty)
+        gross = (fill_price - position.entry_price) * closed * position.signal
+        exit_fee = fill_price * closed * self.fee_rate
+        position.realized_pnl += gross - exit_fee
+        position.fees += exit_fee
+        position.slippage += abs(fill_price - price) * closed
+        position.remaining_quantity -= closed
+        position.partial_taken = True
+        payload = asdict(position)
+        payload.update({
+            "status": "OPEN",
+            "opened_at": position.entry_time,
+            "partial_exit_price": fill_price,
+            "partial_exit_quantity": closed,
+            "partial_exit_reason": reason,
+            "partial_exit_order": response,
+            "partial_exit_bar": position.last_managed_bar,
+        })
+        self.store.upsert_trade(position.trade_id, payload)
+        self.store.event("live_partial_exit", payload)
+        self.update_stop(position, position.stop_loss, rules)
+        return position
+
     def update_stop(self, position: RuntimePosition, new_stop: float, rules: SymbolRules) -> None:
         side = "SELL" if position.signal > 0 else "BUY"
+        stop_qty = position.remaining_quantity if position.remaining_quantity > 0 else position.quantity
         rounded_stop = rules.round_price(new_stop) if side == "SELL" else rules.round_price_up(new_stop)
-        if rounded_stop <= 0:
+        if rounded_stop <= 0 or stop_qty <= 0:
             return
         try:
             self.client.cancel_all_orders(position.symbol)
@@ -306,7 +394,7 @@ class LiveBinanceBroker:
             symbol=position.symbol,
             side=side,
             order_type="STOP_MARKET",
-            quantity=Decimal(str(position.quantity)),
+            quantity=Decimal(str(stop_qty)),
             reduce_only=True,
             stop_price=rounded_stop,
             client_order_id=f"{position.trade_id}-STOP",

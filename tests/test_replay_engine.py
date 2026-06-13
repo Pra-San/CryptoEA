@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from deployment.replay_engine import replay_deployment
+from deployment.live_replay import replay_live_deployment_path
 from scripts.explore_trailing_highwin_edge import simulate_trades
 
 
@@ -76,3 +77,44 @@ def test_replay_deployment_matches_research_simulator_on_signal_lifecycle() -> N
         assert replayed.quantity == simulated.quantity
         assert replayed.pnl == simulated.pnl
         assert replayed.r_multiple == simulated.r_multiple
+
+
+def test_live_deployment_replay_matches_partial_exit_lifecycle() -> None:
+    featured = pd.DataFrame(
+        {
+            "open": [100.0, 100.0, 100.0, 100.0, 101.0, 101.5, 102.0],
+            "high": [101.0, 101.0, 101.0, 100.5, 102.0, 102.0, 102.0],
+            "low": [99.0, 99.0, 99.0, 99.5, 100.5, 101.0, 101.0],
+            "close": [100.0, 100.0, 100.0, 100.5, 101.5, 101.0, 101.0],
+            "signal": [0, 0, 1, 1, 1, 0, 0],
+            "stop_loss": [np.nan, np.nan, 98.0, 98.0, 98.0, np.nan, np.nan],
+            "take_profit": [np.nan] * 7,
+            "atr_14": [2.0] * 7,
+        },
+        index=pd.date_range("2025-01-01", periods=7, freq="h", tz="UTC"),
+    )
+    runtime = DummyRuntime()
+    runtime.params = {
+        **runtime.params,
+        "move_stop_after_partial": True,
+        "partial_exit_atr": 0.5,
+        "partial_exit_fraction": 0.5,
+        "use_partial_exit": True,
+    }
+
+    expected = simulate_trades(
+        featured,
+        runtime.symbol,
+        runtime.args(),
+        runtime.params,
+        runtime.slippage_rate,
+    )
+    actual = replay_live_deployment_path(featured, runtime)
+
+    assert len(actual) == len(expected) == 1
+    assert actual[0].exit_reason == "partial_then_flat_signal"
+    assert actual[0].entry_time == expected[0].entry_time
+    assert actual[0].exit_time == expected[0].exit_time
+    assert actual[0].quantity == expected[0].quantity
+    assert actual[0].pnl == expected[0].pnl
+    assert actual[0].r_multiple == expected[0].r_multiple
