@@ -25,6 +25,19 @@ services:
     depends_on:
       - strategy-demo
 
+  replay-proxy:
+    image: cryptoea:latest
+    build: .
+    profiles: ["test"]
+    command: ["python", "scripts/replay_deployment_proxy.py", "--source", "binance", "--fail-on-mismatch"]
+    env_file:
+      - .env
+    volumes:
+      - ./runtime:/app/runtime
+      - ./research:/app/research:ro
+      - ./data:/app/data:ro
+    restart: "no"
+
   strategy-live:
     image: cryptoea:latest
     build: .
@@ -36,4 +49,3 @@ services:
       - ./runtime:/app/runtime
       - ./research:/app/research:ro
     restart: "no"
-

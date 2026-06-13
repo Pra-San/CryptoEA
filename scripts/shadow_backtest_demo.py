@@ -88,26 +88,29 @@ def run_once(args: argparse.Namespace) -> None:
     trades, metrics = runtime.backtest_snapshot(raw, balance=args.balance)
     store = SQLiteStateStore(args.state_db)
     deployment_summary = store.closed_trade_summary()
+    shadow_total_pnl = sum(float(getattr(trade, "pnl", 0.0) or 0.0) for trade in trades)
     comparison = {
         "generated_at": pd.Timestamp.now("UTC").isoformat(),
         "symbol": runtime.symbol,
         "timeframe": runtime.timeframe,
         "candidate": runtime.name,
         "exchange": args.exchange,
+        "comparison_scope": "shadow is a rolling-window historical backtest; deployment_demo_summary is forward-only state since the demo database was created",
         "closed_kline_start": raw.index[0].isoformat() if len(raw) else None,
         "closed_kline_end": raw.index[-1].isoformat() if len(raw) else None,
         "shadow_metrics": metrics,
+        "shadow_total_pnl": shadow_total_pnl,
         "deployment_demo_summary": deployment_summary,
         "differences": {
             "trade_count": deployment_summary.get("closed_trades", 0) - int(metrics.get("total_trades", 0)),
-            "total_pnl": deployment_summary.get("total_pnl", 0.0) - float(metrics.get("total_return", 0.0) or 0.0),
+            "total_pnl": deployment_summary.get("total_pnl", 0.0) - shadow_total_pnl,
         },
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_trades(args.output_dir / "shadow_trades.csv", trades)
     (args.output_dir / "shadow_metrics.json").write_text(json.dumps(comparison, indent=2, sort_keys=True, default=str))
     logger.info(
-        "Shadow complete trades=%s win=%.2f%% pf=%.2f expR=%.3f deploy_closed=%s",
+        "Shadow rolling-window complete trades=%s win=%.2f%% pf=%.2f expR=%.3f deploy_closed_since_state_start=%s",
         metrics.get("total_trades", 0),
         float(metrics.get("win_rate", 0)) * 100,
         float(metrics.get("profit_factor", 0) or 0),
@@ -131,4 +134,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

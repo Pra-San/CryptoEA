@@ -14,5 +14,6 @@ logs/
 *.parquet
 data/cache/
 reports/
+runtime/
 .env
 __pycache__/
