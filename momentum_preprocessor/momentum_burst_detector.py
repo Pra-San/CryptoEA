@@ -101,6 +101,12 @@ class BurstConfig:
     # 0 = no cooldown, allow immediate re-trigger.
     cooldown: int = 0
 
+    # If |1-bar return| falls below this during an active burst, end the
+    # burst immediately even if the rolling z-score is still above exit_z.
+    # This prevents the rolling window from dragging out the burst with
+    # old momentum while price has already flatlined.  0 = disabled.
+    fade_ret_threshold: float = 0.0001
+
     # Optional volume confirmation: require volume z-score above
     # `volume_z_threshold` on the bar that triggers the burst.
     require_volume: bool = False
@@ -143,6 +149,10 @@ def compute_features(df: pd.DataFrame, config: BurstConfig) -> pd.DataFrame:
     vol = vol.replace(0, np.nan)
     df["vol"] = vol
     df["z"] = df["trigger_ret"] / (df["vol"] * np.sqrt(config.momentum_window))
+
+    # Recent 1-bar return (used by fade detection to end bursts when price
+    # flatlines, even if the rolling window still contains old momentum).
+    df["recent_ret"] = df["ret"]
 
     # These are burst-relative outputs, not fixed-window trigger features.
     # They are NaN until annotate_dataframe() knows each burst's start bar.
@@ -202,6 +212,8 @@ def detect_bursts(df: pd.DataFrame, config: BurstConfig) -> pd.DataFrame:
 
     scores = df[score_col].to_numpy()
     volume_z = df["volume_z"].to_numpy() if config.require_volume else None
+    recent_ret = df["recent_ret"].to_numpy()
+    fade_thr = config.fade_ret_threshold
 
     bursts = []
     state = 0          # 0 = none, 1 = up-burst, -1 = down-burst
@@ -237,14 +249,26 @@ def detect_bursts(df: pd.DataFrame, config: BurstConfig) -> pd.DataFrame:
 
         elif state == 1:
             peak_score = max(peak_score, s)
-            if s < exit_thr:
+            # End burst early if price has flatlined (momentum has faded)
+            # even though the rolling window still contains old momentum.
+            if fade_thr > 0 and abs(recent_ret[i]) < fade_thr:
+                bursts.append(_build_burst(df, start_idx, i, 1, peak_score))
+                state = 0
+                cooldown_left = config.cooldown
+            elif s < exit_thr:
                 bursts.append(_build_burst(df, start_idx, i, 1, peak_score))
                 state = 0
                 cooldown_left = config.cooldown
 
         elif state == -1:
             peak_score = min(peak_score, s)
-            if s > -exit_thr:
+            # End burst early if price has flatlined (momentum has faded)
+            # even though the rolling window still contains old momentum.
+            if fade_thr > 0 and abs(recent_ret[i]) < fade_thr:
+                bursts.append(_build_burst(df, start_idx, i, -1, peak_score))
+                state = 0
+                cooldown_left = config.cooldown
+            elif s > -exit_thr:
                 bursts.append(_build_burst(df, start_idx, i, -1, peak_score))
                 state = 0
                 cooldown_left = config.cooldown
