@@ -8,7 +8,7 @@ start / end bars so you can study what happens before/during/after them.
 ------------------------------------------------------------------------
 HOW IT WORKS
 ------------------------------------------------------------------------
-1. For every bar, compute the cumulative log-return over the last
+1. For every bar, compute the trigger log-return over the last
    `momentum_window` bars (i.e. "how far did price move in the last N
    minutes").
 2. Compare that move to the asset's recent "normal" volatility
@@ -34,7 +34,9 @@ WHAT YOU GET
 - `bursts_df`     : one row per detected burst (start/end index & time,
                     direction, duration, % move, peak z-score)
 - `annotated_df`  : your original df + columns `in_burst`, `burst_id`,
-                    `burst_direction`, plus the computed features
+                    `burst_direction`, plus the computed features. In the
+                    annotated output, `cum_ret` means return from that
+                    burst's start bar to the current bar.
 - `build_event_panel(...)` : stacks N bars before/after every burst
                     start (or end) into one DataFrame so you can average
                     price/volume paths across bursts and look for
@@ -132,13 +134,20 @@ def compute_features(df: pd.DataFrame, config: BurstConfig) -> pd.DataFrame:
     # --- core momentum / volatility ---
     df["ret"] = np.log(df["close"] / df["close"].shift(1))
 
-    df["cum_ret"] = df["ret"].rolling(config.momentum_window).sum()
-    df["cum_ret_pct"] = (np.exp(df["cum_ret"]) - 1) * 100
+    # Rolling move used only to trigger/score a burst. This is intentionally
+    # fixed-width; burst-relative `cum_ret` is filled in annotate_dataframe().
+    df["trigger_ret"] = df["ret"].rolling(config.momentum_window).sum()
+    df["trigger_ret_pct"] = (np.exp(df["trigger_ret"]) - 1) * 100
 
     vol = df["ret"].rolling(config.vol_window).std()
     vol = vol.replace(0, np.nan)
     df["vol"] = vol
-    df["z"] = df["cum_ret"] / (df["vol"] * np.sqrt(config.momentum_window))
+    df["z"] = df["trigger_ret"] / (df["vol"] * np.sqrt(config.momentum_window))
+
+    # These are burst-relative outputs, not fixed-window trigger features.
+    # They are NaN until annotate_dataframe() knows each burst's start bar.
+    df["cum_ret"] = np.nan
+    df["cum_ret_pct"] = np.nan
 
     # --- optional volume z-score ---
     vol_mean = df["volume"].rolling(config.volume_window).mean()
@@ -170,7 +179,7 @@ def _score_and_thresholds(row: pd.Series, config: BurstConfig) -> float:
     if config.method == "zscore":
         return row["z"]
     elif config.method == "pct":
-        return row["cum_ret_pct"]
+        return row["trigger_ret_pct"]
     else:
         raise ValueError(f"Unknown method: {config.method}")
 
@@ -186,7 +195,7 @@ def detect_bursts(df: pd.DataFrame, config: BurstConfig) -> pd.DataFrame:
         score_col = "z"
         entry_thr, exit_thr = config.entry_z, config.exit_z
     elif config.method == "pct":
-        score_col = "cum_ret_pct"
+        score_col = "trigger_ret_pct"
         entry_thr, exit_thr = config.entry_pct, config.exit_pct
     else:
         raise ValueError(f"Unknown method: {config.method}")
@@ -275,21 +284,33 @@ def _build_burst(df, start_idx, end_idx, direction, peak_score) -> dict:
 
 def annotate_dataframe(df: pd.DataFrame, bursts_df: pd.DataFrame) -> pd.DataFrame:
     """Add `in_burst`, `burst_id`, `burst_direction`, and `burst_phase`
-    (start / middle / end) columns to the original dataframe."""
+    (start / middle / end) columns to the original dataframe.
+
+    Also fills `cum_ret` / `cum_ret_pct` as burst-relative returns: each
+    annotated bar is measured from its own burst's start close to the current
+    close, not from the fixed trigger window.
+    """
     df = df.copy()
     df["in_burst"] = False
     df["burst_id"] = -1
     df["burst_direction"] = ""
     df["burst_phase"] = ""
+    df["cum_ret"] = np.nan
+    df["cum_ret_pct"] = np.nan
 
     for i, row in bursts_df.iterrows():
-        s, e = row["start_idx"], row["end_idx"]
+        s, e = int(row["start_idx"]), int(row["end_idx"])
         mask = (df.index >= s) & (df.index <= e)
         df.loc[mask, "in_burst"] = True
         df.loc[mask, "burst_id"] = i
         df.loc[mask, "burst_direction"] = row["direction"]
         df.loc[s, "burst_phase"] = "start"
         df.loc[e, "burst_phase"] = "end"
+        base_close = float(df.loc[s, "close"])
+        if base_close > 0:
+            burst_close = df.loc[mask, "close"].astype(float)
+            df.loc[mask, "cum_ret"] = np.log(burst_close / base_close)
+            df.loc[mask, "cum_ret_pct"] = (burst_close / base_close - 1) * 100
         if e > s:
             df.loc[(df.index > s) & (df.index < e), "burst_phase"] = "middle"
 
